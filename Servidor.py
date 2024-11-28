@@ -17,7 +17,6 @@ def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, s
 
     # Cifrar el contenido
     mensaje_cifrado = aesEncryptor.update(padded_data) + aesEncryptor.finalize()
-    print("patata")
     return mensaje_cifrado
     
 
