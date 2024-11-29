@@ -37,6 +37,7 @@ s.listen(5)  # Los que puede dejar en cola antes de empezar
 
 inputs = [s]
 catalogo= False
+contenido_en_lista = os.listdir("carpeta_contenidos")
 
 while True:
     ready_to_read, ready_to_write, in_error = select.select(inputs, [], [])
@@ -56,7 +57,6 @@ while True:
                 # Leer el contenido del archivo y enviarlo al cliente
                 try:
 
-                    contenido_en_lista = os.listdir("carpeta_contenidos")
                     contenido=""
                     
                     for imagenes in contenido_en_lista:
@@ -76,18 +76,29 @@ while True:
             
             else:
                 try:
-                    with open("carpeta_contenidos/"+mensaje[24:]+".png", "rb") as archivo:
+                    archivo=""
+                    recurso=""
+                    for i in contenido_en_lista:
+                        if i==mensaje[24:]:
+                            recurso= i
+                            #print(archivo)
+                            
+                    
+                    with open("carpeta_contenidos/"+recurso, "rb") as archivo:
                         imagen = archivo.read()
+                        print(contenido_en_lista)
 
                         # Cifrar el contenido
                         img_cifrada = cifrador(imagen)                        
                         
-                        socket.send("<IMAGEN>".encode())
+                        socket.send("<CONTENIDO>".encode())
                         socket.sendall(img_cifrada)
                         socket.send("<FIN>".encode())
-                        print("imagen "+mensaje[24:]+".png enviada")
+                        print(recurso,"enviad@ \n", "-"*40)
+                        
+                        
 
 
                         
-                except FileNotFoundError:
+                except (FileNotFoundError, PermissionError): # Si solo pones img1 da error de permiso
                     socket.send(cifrador("Error: mensaje no reconocido".encode()))

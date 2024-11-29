@@ -39,17 +39,17 @@ def escuchar():
         # Recibir mensaje del servidor
         data = sock.recv(1024)
         
-        identificador_principio= data[:8]
+        identificador_principio= data[:11]
         identificador_final= data[-5:]
         
         
-        if identificador_principio == b"<IMAGEN>":
+        if identificador_principio == b"<CONTENIDO>":
             procesar_imagen= "encendido"
             
             
-        elif identificador_principio != b"<IMAGEN>" and procesar_imagen == "encendido":
+        elif identificador_principio != b"<CONTENIDO>" and procesar_imagen == "encendido":
             
-            with open('carpeta_del_cliente/imagen_recibida_'+message[24:]+'.png', 'wb') as file:
+            with open('carpeta_del_cliente/contenido_recibido_'+message[24:], 'wb') as file:
                 
 
                 if identificador_final == b'<FIN>':
@@ -102,12 +102,13 @@ def escuchar():
                     
                     print(message[24:]+" procesando paquete... ",len(data),"\n")
                     
-                    print("Imagen recibida \n")
+                    print(message[24:]+ " recibid@ \n")
                     print("-"*40+"\n Sigue escribiendo:")
                     procesar_imagen= "apagado"
                     
-                    imagen_recibida = Image.open('carpeta_del_cliente/'+'imagen_recibida_'+message[24:]+'.png')
-                    imagen_recibida.show()
+#                     imagen_recibida = Image.open('carpeta_del_cliente/'+'imagen_recibida_'+message[24:])
+#                     imagen_recibida.show()
+#                     Si se activa al intentar representar imagenes da error
                     
                     file_bytes= b"" #Es necesario porque si no muestra la misma imagen al pedir otras (no se por que)
 
