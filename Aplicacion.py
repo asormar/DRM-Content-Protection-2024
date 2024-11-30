@@ -2,7 +2,46 @@ import socket
 import threading
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
+from pathlib import Path
+
+def marcar(imagen):
+    # Abrir la imagen base y asegurarse de que esté en modo RGBA
+    imagen = Image.open(imagen).convert("RGBA")
+
+    # Crear una nueva imagen de marca de agua en RGBA
+    marca_agua = Image.new("RGBA", imagen.size, (0, 0, 0, 0))
+    dibujar = ImageDraw.Draw(marca_agua)
+
+    # Definir las propiedades de la fuente y el texto
+    tamaño_fuente = 50  # Ajustar el tamaño según sea necesario
+    ruta_fuente = "arial.ttf"  # Reemplazar con la ruta a una fuente .ttf en tu sistema
+    fuente = ImageFont.truetype(ruta_fuente, tamaño_fuente)
+    texto_marca_agua = "MARCA DE AGUA"
+
+    # Calcular la posición del texto
+    caja_texto = dibujar.textbbox((0, 0), texto_marca_agua, font=fuente)
+    x = 450  # + derecha      - izquierda
+    y = 450  # + abajo        - arriba
+
+    # Dibujar el texto en la marca de agua
+    color_relleno = (0, 0, 0, 128)  # Negro semitransparente
+    dibujar.text((x, y), texto_marca_agua, font=fuente, fill=color_relleno)
+
+    # Crear una imagen de marca de agua rotada
+    marca_agua_rotada = Image.new("RGBA", imagen.size, (0, 0, 0, 0))
+    dibujar_rotada = ImageDraw.Draw(marca_agua_rotada)
+    dibujar_rotada.text((x, y), texto_marca_agua, font=fuente, fill=color_relleno)
+
+    # Rotar la marca de agua
+    marca_agua_rotada = marca_agua_rotada.rotate(45, center=(x, y))
+
+    # Combinar las imágenes usando alpha_composite
+    resultado = Image.alpha_composite(imagen, marca_agua_rotada)
+
+    # Guardar la imagen final
+    resultado.save('carpeta_del_cliente/contenido_recibido_'+message[24:])
+
 
 def decifrador(cosa_que_queremos_descifrar, key):
     iv = b'\x00' * 16  # Debe coincidir con el IV del servidor en este ejemplo simplificado
@@ -50,6 +89,12 @@ def escuchar():
         elif identificador_principio != b"<CONTENIDO>" and procesar_imagen == "encendido":
             
             with open('carpeta_del_cliente/contenido_recibido_'+message[24:], 'wb') as file:
+                
+                # Ruta del archivo
+                ruta = Path('carpeta_del_cliente/contenido_recibido_'+message[24:])
+                # Obtener la extensión
+                extension = ruta.suffix
+                #print(f"La extensión del archivo es: {extension}")
                 
 
                 if identificador_final == b'<FIN>':
@@ -103,6 +148,16 @@ def escuchar():
                     print(message[24:]+" procesando paquete... ",len(data),"\n")
                     
                     print(message[24:]+ " recibid@ \n")
+                    
+                    try:
+                        marcar('carpeta_del_cliente/contenido_recibido_'+message[24:])
+                    except UnidentifiedImageError:
+                        pass
+
+                    
+                    
+                    
+                    
                     print("-"*40+"\n Sigue escribiendo:")
                     procesar_imagen= "apagado"
                     
