@@ -151,7 +151,7 @@ def escuchar():
                     
                     try:
                         marcar('carpeta_del_cliente/contenido_recibido_'+message[24:])
-                    except UnidentifiedImageError:
+                    except UnidentifiedImageError: # Si es un video para que no intente añadir marca de agua
                         pass
 
                     
