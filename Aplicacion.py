@@ -4,6 +4,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from pathlib import Path
+import math
+import base64
 
 def marcar(imagen):
     # Abrir la imagen base y asegurarse de que esté en modo RGBA
@@ -42,6 +44,20 @@ def marcar(imagen):
     # Guardar la imagen final
     resultado.save('carpeta_del_cliente/contenido_recibido_'+message[24:])
 
+def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
+    # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
+    key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurar que sea de 256 bits
+    iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
+    aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    aesEncryptor = aesCipher.encryptor()
+
+    # Aplicar padding PKCS7
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(cosa_que_queremos_cifrar) + padder.finalize()
+
+    # Cifrar el contenido
+    mensaje_cifrado = aesEncryptor.update(padded_data) + aesEncryptor.finalize()
+    return mensaje_cifrado
 
 def decifrador(cosa_que_queremos_descifrar, key):
     iv = b'\x00' * 16  # Debe coincidir con el IV del servidor en este ejemplo simplificado
@@ -53,6 +69,16 @@ def decifrador(cosa_que_queremos_descifrar, key):
     KEY_descifrada_licencia = aesDecryptor.update(cosa_que_queremos_descifrar) + aesDecryptor.finalize()
     #no hace falta padding porque tiene longitud 32
     return KEY_descifrada_licencia
+
+def firmar_peticion_clave(mensaje, clave_publica):
+    e, n = clave_publica
+    mensaje_cifrado = [pow(ord(char), e, n) for char in mensaje]
+    # Convertir la lista de enteros a una cadena codificada en base64
+    mensaje_cifrado_codificado = base64.b64encode(
+        ",".join(map(str, mensaje_cifrado)).encode()
+    ).decode()
+    return mensaje_cifrado_codificado
+
 
 
 def escribir():  # Crea una función para escribir
@@ -102,13 +128,16 @@ def escuchar():
                     file_bytes += data[:-5]
                     
                     
-                    # Server configurations
+                    # CONECTAR CON SERVER DE LICENCIAS
                     SERVER1 = ('127.0.0.1', 7002)
                     i += 1
+                    
+                    clave_publica= (7, 3233)
+                    
 
-                    # Conectar Server licencias
                     client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     client1.connect(SERVER1)
+                    client1.sendall(firmar_peticion_clave("dame la clave", clave_publica).encode())
                     #print(f"Connected to Server 1: {SERVER1}")
                     KEY_cifrada_licencia = client1.recv(1024)
                     client1.close()
@@ -116,7 +145,7 @@ def escuchar():
                     #print(key)
                     
                     
-                    #DESZIFRADOR LLAVE
+                    #DESZIFRADOR LLAVE DEL SERVER DE LICENCIAS
                     
                     key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
 

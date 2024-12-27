@@ -1,16 +1,31 @@
 from socket import *
 import select
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+import math
+import base64
 
-# Configuración del servidor
-direccion_IP_servidor = "127.0.0.1"
+def descifrar_peticion_clave(mensaje_cifrado, clave_privada):
+    d, n = clave_privada
+    # Decodificar la cadena base64 y convertirla nuevamente en una lista de enteros
+    mensaje_cifrado = list(map(int, base64.b64decode(mensaje_cifrado).decode().split(",")))
+    mensaje_descifrado = ''.join(chr(pow(char, d, n)) for char in mensaje_cifrado)
+    return mensaje_descifrado
+
+# Almacenar dirección IP
+dir_IP_servidor = "127.0.0.1"
 puerto_servidor = 7002
 
-# Crear socket
-servidor = socket(AF_INET, SOCK_STREAM)  # SOCK_STREAM indica que es TCP
-servidor.bind((direccion_IP_servidor, puerto_servidor))
-servidor.listen(5)  # Número máximo de conexiones en cola
-servidor.setblocking(False)  # Hacer que el socket no bloquee
+# Introducir parámetros
+dir_socket_servidor = (dir_IP_servidor, puerto_servidor)
+
+# Constructor de la clase
+s = socket(AF_INET, SOCK_STREAM)  # SOCK_STREAM indica que es TCP
+
+# Vincular y escuchar
+s.bind(dir_socket_servidor)
+s.listen(5)  # Los que puede dejar en cola antes de empezar
+inputs = [s]
+
 
 # Clave y configuración de cifrado
 KEY_enviar = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'  # Asegúrate de que sea de 256 bits
@@ -23,22 +38,28 @@ aesEncryptor = aesCipher.encryptor()
 KEY_cifrada = aesEncryptor.update(KEY_enviar)
 #print("Clave cifrada:", KEY_cifrada)
 
-# Listas para select
-entradas = [servidor]  # Lista de sockets para lectura
-salidas = []           # Lista de sockets listos para escritura
-clientes = {}          # Para rastrear sockets conectados
-
 #print("El servidor está escuchando...")
 
 while True:
-    # Usamos select para manejar múltiples sockets
-    lista_lectura, lista_escritura, lista_excepciones = select.select(entradas, salidas, entradas)
+    ready_to_read, ready_to_write, in_error = select.select(inputs, [], [])
+    
+    for socket in ready_to_read:
+        if socket is s:
+            cliente, cliente_data = s.accept()
+            print(str(cliente.getpeername()), "se unió al grupo \n")
+            inputs.append(cliente)
+        else:
+            try:
+                mensaje = socket.recv(1024)
+                
+                clave_privada = (1783, 3233)
+                mensaje_descifrado = descifrar_peticion_clave(mensaje, clave_privada)
+                print(mensaje_descifrado, "\n")
 
-    for socket_actual in lista_lectura:
-        if socket_actual is servidor:
-            # Nueva conexión entrante
-            conexion, direccion = servidor.accept()
-            print("Conexión establecida con:", direccion,"\n")
-            # Enviar la clave cifrada al cliente al conectarse
-            conexion.sendall(KEY_cifrada)
-            print("Clave cifrada enviada \n")
+                # Enviar la clave cifrada al cliente al conectarse
+                if mensaje_descifrado=="dame la clave":
+                    socket.sendall(KEY_cifrada)
+                    print("Clave cifrada enviada \n")
+                    
+            except ValueError: # al escuchar todo el rato no para de descifrar y da error
+                pass
