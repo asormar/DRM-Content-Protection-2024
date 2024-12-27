@@ -3,7 +3,7 @@ import select
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 import os
-
+from PIL import Image, ImageDraw, ImageFont
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
     key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurar que sea de 256 bits
@@ -19,7 +19,41 @@ def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, s
     mensaje_cifrado = aesEncryptor.update(padded_data) + aesEncryptor.finalize()
     return mensaje_cifrado
     
+from PIL import Image, ImageDraw, ImageFont
 
+def add_watermark(image_path, text,exit_path):
+    # Abrir la imagen
+    image = Image.open(image_path).convert("RGBA")
+    
+    # Crear una capa para la marca de agua
+    watermark = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(watermark)
+    
+    # Configurar la fuente (usa una fuente genérica del sistema)
+    font_size = int(min(image.size) * 0.05)  # Tamaño proporcional a la imagen
+    try:
+        font = ImageFont.truetype("arial.ttf", font_size)
+    except IOError:
+        font = ImageFont.load_default()
+    
+    # Obtener las dimensiones del texto usando textbbox
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    
+    # Posición del texto (esquina inferior derecha con margen)
+    x = image.size[0] - text_width - 10
+    y = image.size[1] - text_height - 10
+    
+    # Dibujar el fondo negro para la marca de agua (un rectángulo detrás del texto)
+    margin = 5  # Margen entre el texto y el fondo
+    draw.rectangle([x - margin, y - margin, x + text_width + margin, y + text_height + margin], fill=(0, 0, 0, 255))
+    
+    # Dibujar el texto sobre el fondo negro con transparencia
+    draw.text((x, y), text, font=font, fill=(255, 255, 0, 128))  # Texto amarillo con transparencia
+    
+    # Combinar la imagen original con la marca de agua
+    watermarked_image = Image.alpha_composite(image, watermark)
+    watermarked_image.convert("RGB").save(exit_path, "PNG")
 
 # Almacenar dirección IP
 dir_IP_servidor = "127.0.0.1"
@@ -76,9 +110,12 @@ while True:
             
             else:
                 try:
-                    with open("carpeta_contenidos/"+mensaje[24:]+".png", "rb") as archivo:
+                    #imagenes
+                    add_watermark("carpeta_contenidos/"+mensaje[24:]+".png", str(cliente.getpeername()),"carpeta_contenidos/"+mensaje[24:]+"_marcada.png")
+                    with open("carpeta_contenidos/"+mensaje[24:]+"_marcada.png", "rb") as archivo:
+                        
                         imagen = archivo.read()
-
+                        
                         # Cifrar el contenido
                         img_cifrada = cifrador(imagen)                        
                         
