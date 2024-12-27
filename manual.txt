@@ -1,4 +1,0 @@
-Manual de uso cliente:
-
-<nombre_imagen> : descarga la imagen
-catalogo : listado de contenidos a descargar
