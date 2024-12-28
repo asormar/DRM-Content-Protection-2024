@@ -4,8 +4,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import math
 import base64
 
-def descifrar_peticion_clave(mensaje_cifrado, clave_privada):
-    d, n = clave_privada
+def descifrar_peticion_clave(mensaje_cifrado, clave_publica):
+    d, n = clave_publica
     # Decodificar la cadena base64 y convertirla nuevamente en una lista de enteros
     mensaje_cifrado = list(map(int, base64.b64decode(mensaje_cifrado).decode().split(",")))
     mensaje_descifrado = ''.join(chr(pow(char, d, n)) for char in mensaje_cifrado)
@@ -52,8 +52,8 @@ while True:
             try:
                 mensaje = socket.recv(1024)
                 
-                clave_privada = (1783, 3233)
-                mensaje_descifrado = descifrar_peticion_clave(mensaje, clave_privada)
+                clave_publica= (7, 3233)
+                mensaje_descifrado = descifrar_peticion_clave(mensaje, clave_publica)
                 print(mensaje_descifrado, "\n")
 
                 # Enviar la clave cifrada al cliente al conectarse

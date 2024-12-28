@@ -70,8 +70,8 @@ def decifrador(cosa_que_queremos_descifrar, key):
     #no hace falta padding porque tiene longitud 32
     return KEY_descifrada_licencia
 
-def firmar_peticion_clave(mensaje, clave_publica):
-    e, n = clave_publica
+def firmar_peticion_clave(mensaje, clave_privada):
+    e, n = clave_privada
     mensaje_cifrado = [pow(ord(char), e, n) for char in mensaje]
     # Convertir la lista de enteros a una cadena codificada en base64
     mensaje_cifrado_codificado = base64.b64encode(
@@ -132,12 +132,13 @@ def escuchar():
                     SERVER1 = ('127.0.0.1', 7002)
                     i += 1
                     
-                    clave_publica= (7, 3233)
+                    
+                    clave_privada = (1783, 3233)
                     
 
                     client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     client1.connect(SERVER1)
-                    client1.sendall(firmar_peticion_clave("dame la clave", clave_publica).encode())
+                    client1.sendall(firmar_peticion_clave("dame la clave", clave_privada).encode())
                     #print(f"Connected to Server 1: {SERVER1}")
                     KEY_cifrada_licencia = client1.recv(1024)
                     client1.close()
