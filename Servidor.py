@@ -1,3 +1,4 @@
+#servidor
 from socket import *
 import select
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -36,7 +37,7 @@ s.listen(5)  # Los que puede dejar en cola antes de empezar
 
 inputs = [s]
 catalogo= False
-contenido_en_lista = os.listdir("carpeta_contenidos")
+contenido_en_lista = os.listdir("contenidos")
 
 while True:
     ready_to_read, ready_to_write, in_error = select.select(inputs, [], [])
@@ -83,7 +84,7 @@ while True:
                             #print(archivo)
                             
                     
-                    with open("carpeta_contenidos/"+recurso, "rb") as archivo:
+                    with open("contenidos/"+recurso, "rb") as archivo:
                         imagen = archivo.read()
                         print(contenido_en_lista)
 
