@@ -1,11 +1,11 @@
 import socket
+import threading
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import padding as pkcs7
 import json
-import os
 
 # Claves predefinidas
 CLAVE_ENVIAR = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'
@@ -32,8 +32,46 @@ def firmar_mensaje(clave_privada, mensaje):
     )
     return firma
 
-# Función para procesar la solicitud de licencia y devolver la respuesta
-def procesar_solicitud_licencia():
+# Función para manejar cada conexión en un thread
+def manejar_conexion(conn, addr, clave_privada_CDM):
+    print(f"Conexión aceptada de {addr}")
+    try:
+        mensaje_cifrado = conn.recv(1024)
+        print(f"Solicitud recibida: {mensaje_cifrado}")
+
+        # Descifrar el mensaje usando la clave simétrica
+        mensaje_descifrado = descifrar_datos_simetricos(CLAVE_ENVIAR, mensaje_cifrado)
+
+        # Procesar la solicitud (por ejemplo, verificar que el contenido esté cifrado)
+        print(f"Mensaje descifrado: {mensaje_descifrado.decode('utf-8')}")
+
+        # Firmar el mensaje (respuesta) utilizando la clave privada del CDM
+        respuesta = {"status": "OK", "message": "Licencia procesada correctamente", "content": "video.mp4"}
+        mensaje_respuesta = json.dumps(respuesta)
+        firma = firmar_mensaje(clave_privada_CDM, mensaje_respuesta)
+
+        # Agregar la firma al mensaje de respuesta
+        respuesta['firma'] = firma.hex()  # Convertimos la firma a un formato que se puede enviar (hexadecimal)
+
+        # Cifrar la respuesta antes de enviarla de vuelta al cliente
+        cipher = Cipher(algorithms.AES(CLAVE_ENVIAR), modes.CBC(iv))
+        encryptor = cipher.encryptor()
+
+        # Asegurarse de que el mensaje sea múltiplo de 16 bytes antes de cifrar
+        padder = pkcs7.PKCS7(128).padder()
+        datos_relleno = padder.update(mensaje_respuesta.encode('utf-8')) + padder.finalize()
+
+        datos_cifrados_respuesta = encryptor.update(datos_relleno) + encryptor.finalize()
+
+        conn.sendall(datos_cifrados_respuesta)
+        print(f"Licencia firmada y enviada de vuelta al cliente.")
+    except Exception as e:
+        print(f"Error al manejar la conexión: {e}")
+    finally:
+        conn.close()
+
+# Función para iniciar el servidor y manejar conexiones en threads
+def iniciar_servidor():
     # Generar claves RSA para el CDM (solo una vez)
     clave_privada_CDM = rsa.generate_private_key(
         public_exponent=65537,
@@ -41,42 +79,17 @@ def procesar_solicitud_licencia():
     )
     clave_publica_CDM = clave_privada_CDM.public_key()
 
-    # Escuchar en el puerto 8081
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('localhost', 8081))  # Escuchar en el puerto 8081
-        s.listen(1)
-        print("Esperando solicitud de la UA...")
-        conn, addr = s.accept()
-        with conn:
-            mensaje_cifrado = conn.recv(1024)
-            print(f"Solicitud recibida: {mensaje_cifrado}")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as servidor:
+        servidor.bind(('localhost', 8081))  # Escuchar en el puerto 8081
+        servidor.listen(5)
+        print("Servidor CDM escuchando en el puerto 8081...")
 
-            # Descifrar el mensaje usando la clave simétrica
-            mensaje_descifrado = descifrar_datos_simetricos(CLAVE_ENVIAR, mensaje_cifrado)
-
-            # Procesar la solicitud (por ejemplo, verificar que el contenido esté cifrado)
-            print(f"Mensaje descifrado: {mensaje_descifrado}")
-
-            # Firmar el mensaje (respuesta) utilizando la clave privada del CDM
-            respuesta = {"status": "OK", "message": "Licencia procesada correctamente", "content": "video.mp4"}
-            mensaje_respuesta = json.dumps(respuesta)
-            firma = firmar_mensaje(clave_privada_CDM, mensaje_respuesta)
-
-            # Agregar la firma al mensaje de respuesta
-            respuesta['firma'] = firma.hex()  # Convertimos la firma a un formato que se puede enviar (hexadecimal)
-
-            # Cifrar la respuesta antes de enviarla de vuelta a la UA
-            cipher = Cipher(algorithms.AES(CLAVE_ENVIAR), modes.CBC(iv))
-            encryptor = cipher.encryptor()
-
-            # Asegurarse de que el mensaje sea múltiplo de 16 bytes antes de cifrar
-            padder = pkcs7.PKCS7(128).padder()
-            datos_relleno = padder.update(mensaje_respuesta.encode('utf-8')) + padder.finalize()
-
-            datos_cifrados_respuesta = encryptor.update(datos_relleno) + encryptor.finalize()
-
-            conn.sendall(datos_cifrados_respuesta)
-            print(f"Licencia firmada y enviada de vuelta al usuario.")
+        while True:
+            conn, addr = servidor.accept()
+            thread = threading.Thread(target=manejar_conexion, args=(conn, addr, clave_privada_CDM))
+            thread.start()
+            print(f"Thread iniciado para manejar la conexión de {addr}")
 
 # Ejecutar el servidor CDM
-procesar_solicitud_licencia()
+if __name__ == '__main__':
+    iniciar_servidor()
