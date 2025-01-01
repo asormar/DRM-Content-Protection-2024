@@ -1,82 +1,132 @@
 import socket
+import threading
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding as pkcs7
-import json
-import os
+from cryptography.hazmat.primitives import padding
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
+from pathlib import Path
+import math
+import base64
 
-# Claves predefinidas
-CLAVE_ENVIAR = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'
-iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
+def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
+    # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
+    key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurar que sea de 256 bits
+    iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
+    aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    aesEncryptor = aesCipher.encryptor()
 
-# Función para verificar si un archivo está cifrado
-def esta_cifrado(ruta_archivo):
-    try:
-        with open(ruta_archivo, 'rb') as f:
-            datos = f.read()  # Leer todo el archivo
-            print("Datos leídos del archivo:", datos[:64])  # Imprimir los primeros 64 bytes para depurar
+    # Aplicar padding PKCS7
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(cosa_que_queremos_cifrar) + padder.finalize()
 
-            aesCipher = Cipher(algorithms.AES(CLAVE_ENVIAR), modes.CBC(iv))
-            aesDecryptor = aesCipher.decryptor()
+    # Cifrar el contenido
+    mensaje_cifrado = aesEncryptor.update(padded_data) + aesEncryptor.finalize()
+    return mensaje_cifrado
 
-            try:
-                datos_descifrados = aesDecryptor.update(datos) + aesDecryptor.finalize()
-                print("Descifrado:", datos_descifrados)
-                return False  # Si es descifrado correctamente, no está cifrado
-            except Exception as e:
-                print("Error al descifrar:", e)
-                return True  # Si no se puede descifrar, el archivo está cifrado
-    except Exception as e:
-        print("Error al leer el archivo:", e)
-        return False
+def decifrador(cosa_que_queremos_descifrar, key):
+    iv = b'\x00' * 16  # Debe coincidir con el IV del servidor en este ejemplo simplificado
 
-# Función para cifrar datos con AES (modo CBC)
-def cifrar_datos_simetricos(clave, datos):
-    cipher = Cipher(algorithms.AES(clave), modes.CBC(iv))
-    encryptor = cipher.encryptor()
-    
-    # Asegurarse de que el mensaje sea múltiplo de 16 bytes antes de cifrar
-    padder = pkcs7.PKCS7(128).padder()  # 128 bits = 16 bytes
-    datos_relleno = padder.update(datos.encode('utf-8')) + padder.finalize()
-    
-    datos_cifrados = encryptor.update(datos_relleno) + encryptor.finalize()
-    return datos_cifrados
+    aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    aesDecryptor = aesCipher.decryptor()
 
-# Función para enviar la solicitud de licencia al CDM
-def solicitar_licencia(contenido):
-    # Cifrar la solicitud de licencia
-    mensaje = {"request": "license", "content": contenido}
-    mensaje_json = json.dumps(mensaje)
-    mensaje_cifrado = cifrar_datos_simetricos(CLAVE_ENVIAR, mensaje_json)
+    # Descifrar el contenido
+    KEY_descifrada_licencia = aesDecryptor.update(cosa_que_queremos_descifrar) + aesDecryptor.finalize()
+    #no hace falta padding porque tiene longitud 32
+    return KEY_descifrada_licencia
 
-    # Enviar la solicitud al CDM
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect(('localhost', 8081))  # Conectarse al CDM en el puerto 8081
-        s.sendall(mensaje_cifrado)
 
-        # Recibir la respuesta del CDM
-        respuesta_cifrada = s.recv(1024)
-        print(f"Respuesta cifrada recibida: {respuesta_cifrada}")
-
-        # Descifrar la respuesta
-        cipher = Cipher(algorithms.AES(CLAVE_ENVIAR), modes.CBC(iv))
-        decryptor = cipher.decryptor()
-        respuesta_descifrada = decryptor.update(respuesta_cifrada) + decryptor.finalize()
+def escribir():  # Crea una función para escribir
+    while True:
+        global message
+        message = input() ###Preguntar por que al poner algo en el input se duplica el print
+        message = "<" + str(sock.getsockname()) + ">: " + message
+        if message[24:] == "quit":
+            sock.close()
+            break
+        sock.send(message.encode())  # Enviar mensaje al servidor
+        #print(message[24:])
         
-        # Remover el relleno de la respuesta
-        unpadder = pkcs7.PKCS7(128).unpadder()
-        respuesta_descifrada = unpadder.update(respuesta_descifrada) + unpadder.finalize()
+def escuchar():
+    print("Escribe:")
+    file_bytes= b""
+    archivo_cifrado=""
+    procesar_imagen= "apagado"
+    
+    while True:        
+        # Recibir mensaje del servidor
+        data = sock.recv(1024)
+        
+        
+        identificador_principio= data[:11]
+        identificador_final= data[-5:]
+        
+        
+        if identificador_principio == b"<CONTENIDO>":
+            procesar_imagen= "encendido"
+            
+            
+        elif identificador_principio != b"<CONTENIDO>" and procesar_imagen == "encendido":
+            
 
-        print(f"Respuesta descifrada: {respuesta_descifrada.decode('utf-8')}")
+            if identificador_final == b'<FIN>':
+                
+                file_bytes += data[:-5]
 
-# Verificar si el archivo está cifrado y solicitar la licencia
-def principal():
-    ruta_archivo = r'C:\Users\Bryan\Desktop\GTDM\Segder\pruebas\contenidos\img1.png'
-    # Cambiar según el archivo a verificar
-    if esta_cifrado(ruta_archivo):
-        print(f"El archivo {ruta_archivo} está cifrado. Solicitando licencia...")
-        solicitar_licencia(ruta_archivo)
-    else:
-        print(f"El archivo {ruta_archivo} no está cifrado.")
+                if len(file_bytes)%16==0:
+                    archivo_cifrado="si"
+                else:
+                    archivo_cifrado="no"
+                    
+                                            
 
-if __name__ == '__main__':
-    principal()
+                print(message[24:]+ " recibid@ \n")
+                print(f"El archivo {archivo_cifrado} está cifrado")
+                
+                if archivo_cifrado=="si":
+                    pedir_solicitud_cdm="El archivo esta cifrado"
+                    
+                    
+
+                
+                
+  
+                print("-"*40+"\n Sigue escribiendo: \n")
+                procesar_imagen= "apagado"
+              
+                file_bytes= b"" #Es necesario porque si no muestra la misma imagen al pedir otras (no se por que)
+
+                False
+            
+            else:
+                file_bytes += data
+                
+
+            
+            
+            
+        elif procesar_imagen=="apagado":
+            key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurarse de que sea de 256 bits
+
+            # Descifrar el contenido
+            mensaje_descifrado = decifrador(data, key)  
+
+            # Eliminar el padding PKCS7
+            unpadder = padding.PKCS7(128).unpadder()
+            mensaje_despadding = unpadder.update(mensaje_descifrado) + unpadder.finalize()
+
+            print("\n Mensaje recibido: \n", mensaje_despadding.decode(),"\n")
+            print("-"*40+"\n Sigue escribiendo:")
+        
+    
+        
+# Crear el socket TCP
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(("127.0.0.1", 6001))
+
+hilo_escribir = threading.Thread(target=escribir)
+hilo_escuchar = threading.Thread(target=escuchar)
+
+hilo_escribir.start()
+hilo_escuchar.start()
+
+hilo_escribir.join()
+hilo_escuchar.join()

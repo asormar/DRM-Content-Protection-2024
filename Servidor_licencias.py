@@ -1,4 +1,3 @@
-#Servidor licencias
 from socket import *
 import select
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -61,6 +60,6 @@ while True:
                 if mensaje_descifrado=="dame la clave":
                     socket.sendall(KEY_cifrada)
                     print("Clave cifrada enviada \n")
-                    
+                    print("-"*40, "\n")
             except ValueError: # al escuchar todo el rato no para de descifrar y da error
                 pass
