@@ -72,7 +72,7 @@ def escuchar():
             if identificador_final == b'<FIN>':
                 
                 file_bytes += data[:-5]
-
+#Identifica si está o no cifrado 
                 if len(file_bytes)%16==0:
                     archivo_cifrado="si"
                 else:
