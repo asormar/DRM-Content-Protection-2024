@@ -38,11 +38,11 @@ def escribir():  # Crea una función para escribir
     while True:
         global message
         message = input() ###Preguntar por que al poner algo en el input se duplica el print
-        message = "<" + str(sock.getsockname()) + ">: " + message
+        message = "<" + str(s_contenidos.getsockname()) + ">: " + message
         if message[24:] == "quit":
-            sock.close()
+            s_contenidos.close()
             break
-        sock.send(message.encode())  # Enviar mensaje al servidor
+        s_contenidos.send(message.encode())  # Enviar mensaje al servidor
         
         #print(message[24:])
         
@@ -55,7 +55,7 @@ def escuchar():
     
     while True:        
         # Recibir mensaje del servidor
-        data = sock.recv(1024)
+        data = s_contenidos.recv(1024)
         
         
         identificador_principio= data[:11]
@@ -89,12 +89,14 @@ def escuchar():
                     pedir_solicitud_cdm= cifrador(pedir_solicitud_cdm.encode())
                     print(pedir_solicitud_cdm)
                     
-                    SERVER1 = ('127.0.0.1', 8003)
+                    s_UA_CDM.send(pedir_solicitud_cdm)
+                    firma= s_UA_CDM.recv(1024)
+                    print(firma)
                     
-                    client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    client1.connect(SERVER1)
-                    client1.sendall(pedir_solicitud_cdm)
-                    client1.close()
+                    
+                    s_licencias.send(firma)
+                    clave_licencia= s_licencias.recv(1024)
+                    print(clave_licencia)
 
 
 
@@ -131,8 +133,12 @@ def escuchar():
     
         
 # Crear el socket TCP
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(("127.0.0.1", 6001))
+s_contenidos = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s_contenidos.connect(("127.0.0.1", 6001))
+s_UA_CDM = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s_UA_CDM.connect(("127.0.0.1", 8003))
+s_licencias = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s_licencias.connect(("127.0.0.1", 7002))
 
 hilo_escribir = threading.Thread(target=escribir)
 hilo_escuchar = threading.Thread(target=escuchar)

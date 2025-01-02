@@ -126,8 +126,8 @@ def escuchar():
             print("\n Mensaje recibido: \n", mensaje_despadding.decode(),"\n")
             print("-"*40+"\n Sigue escribiendo:")
             
-        if mensaje_despadding=="El archivo esta cifrado":
-            continue
+            if mensaje_despadding.decode()=="El archivo esta cifrado":
+                sock.send("firma".encode())
         
     
         

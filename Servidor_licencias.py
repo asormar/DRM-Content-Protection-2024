@@ -51,6 +51,7 @@ while True:
         else:
             try:
                 mensaje = socket.recv(1024)
+                print(mensaje)
                 
                 clave_publica= (7, 3233)
                 mensaje_descifrado = descifrar_peticion_clave(mensaje, clave_publica)
@@ -61,5 +62,10 @@ while True:
                     socket.sendall(KEY_cifrada)
                     print("Clave cifrada enviada \n")
                     print("-"*40, "\n")
+                    
+                else:
+                    socket.send("Firma no valida".encode())
+                    
             except ValueError: # al escuchar todo el rato no para de descifrar y da error
+                socket.send("Firma no valida".encode()) # Da error al recibir el mensaje porque no está firmado con RSA
                 pass
