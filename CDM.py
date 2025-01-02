@@ -89,14 +89,12 @@ def escuchar():
                     pedir_solicitud_cdm= cifrador(pedir_solicitud_cdm.encode())
                     print(pedir_solicitud_cdm)
                     
-                    SERVER1 = ('127.0.0.1', 8003)
-                    
-                    client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    client1.connect(SERVER1)
-                    client1.sendall(pedir_solicitud_cdm)
-                    client1.close()
-
-
+#                     SERVER1 = ('127.0.0.1', 6001)
+#                     
+#                     client1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#                     client1.connect(SERVER1)
+#                     client1.send(pedir_solicitud_cdm)
+    
 
                 
                 
@@ -127,12 +125,15 @@ def escuchar():
 
             print("\n Mensaje recibido: \n", mensaje_despadding.decode(),"\n")
             print("-"*40+"\n Sigue escribiendo:")
+            
+        if mensaje_despadding=="El archivo esta cifrado":
+            continue
         
     
         
 # Crear el socket TCP
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(("127.0.0.1", 6001))
+sock.connect(("127.0.0.1", 8003))
 
 hilo_escribir = threading.Thread(target=escribir)
 hilo_escuchar = threading.Thread(target=escuchar)
@@ -142,3 +143,4 @@ hilo_escuchar.start()
 
 hilo_escribir.join()
 hilo_escuchar.join()
+

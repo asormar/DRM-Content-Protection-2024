@@ -51,7 +51,6 @@ while True:
             mensaje = socket.recv(2048).decode()
             print(mensaje, "\n")
             if "catalogo" == mensaje[24:]:
-                print("Mensaje recibido de", socket.getpeername(), ":", mensaje,"\n")
                 
                 # Leer el contenido del archivo y enviarlo al cliente
                 try:
@@ -67,7 +66,8 @@ while True:
                     
                     # Enviar el mensaje cifrado
                     socket.send(mensaje_cifrado)
-                    print("Mensaje enviado \n\n")
+                    print("Mensaje enviado")
+                    print("-"*40+"\n")
                         
                 except FileNotFoundError:
                     socket.send(cifrador("No hay contenidos".encode()))
@@ -86,7 +86,7 @@ while True:
                     
                     with open("carpeta_contenidos/"+recurso, "rb") as archivo:
                         imagen = archivo.read()
-                        print(contenido_en_lista)
+                        #print(contenido_en_lista)
 
                         
                         socket.send("<CONTENIDO>".encode())
