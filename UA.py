@@ -82,23 +82,28 @@ def escuchar():
 
                 print(message[24:]+ " recibid@ \n")
                 print(f"El archivo {archivo_cifrado} está cifrado")
-                
+                nombre_archivo = "<archivo>"+message[24:]+"<fin>"
+                nombre_archivo = cifrador(nombre_archivo.encode())
+                s_UA_CDM.send(nombre_archivo)
+                with open('carpeta_del_cliente/contenido_recibido_'+ message[24:], 'wb') as archivo:
+                    archivo.write(file_bytes)
+
                 if archivo_cifrado=="si":
                     pedir_solicitud_cdm="El archivo esta cifrado"                    
                     pedir_solicitud_cdm= cifrador(pedir_solicitud_cdm.encode())
                     
-                    nombre_archivo = "<archivo>"+message[24:]+"<fin>"
-                    nombre_archivo = cifrador(nombre_archivo.encode())
-                    print(len(nombre_archivo))
+                    
+                    
                     s_UA_CDM.send(pedir_solicitud_cdm)
-                    s_UA_CDM.send(nombre_archivo)
+                    
                     firma= s_UA_CDM.recv(1024)
                     
                     s_licencias.send(firma)
                     clave_licencia= s_licencias.recv(1024)
                     s_UA_CDM.send(clave_licencia)
-                    
-                
+                elif archivo_cifrado=="no":
+                    abrir_archivo="El archivo no esta cifrado" 
+                    abrir_archivo = cifrador(abrir_archivo.encode())
                 
   
                 print("-"*40+"\n Sigue escribiendo: \n")

@@ -13,10 +13,10 @@ clave_privada = (1783, 3233)
 
 def marcar(imagen):
     # Abrir la imagen base y asegurarse de que esté en modo RGBA
-    imagen = Image.open(imagen).convert("RGBA")
+    Imagen = Image.open(imagen).convert("RGBA")
 
     # Crear una nueva imagen de marca de agua en RGBA
-    marca_agua = Image.new("RGBA", imagen.size, (0, 0, 0, 0))
+    marca_agua = Image.new("RGBA", Imagen.size, (0, 0, 0, 0))
     dibujar = ImageDraw.Draw(marca_agua)
 
     # Definir las propiedades de la fuente y el texto
@@ -35,7 +35,7 @@ def marcar(imagen):
     dibujar.text((x, y), texto_marca_agua, font=fuente, fill=color_relleno)
 
     # Crear una imagen de marca de agua rotada
-    marca_agua_rotada = Image.new("RGBA", imagen.size, (0, 0, 0, 0))
+    marca_agua_rotada = Image.new("RGBA", Imagen.size, (0, 0, 0, 0))
     dibujar_rotada = ImageDraw.Draw(marca_agua_rotada)
     dibujar_rotada.text((x, y), texto_marca_agua, font=fuente, fill=color_relleno)
 
@@ -43,10 +43,10 @@ def marcar(imagen):
     marca_agua_rotada = marca_agua_rotada.rotate(45, center=(x, y))
 
     # Combinar las imágenes usando alpha_composite
-    resultado = Image.alpha_composite(imagen, marca_agua_rotada)
+    resultado = Image.alpha_composite(Imagen, marca_agua_rotada)
 
     # Guardar la imagen final
-    resultado.save('carpeta_del_cliente/contenido_recibido_'+message[24:])
+    resultado.save(imagen)
 
 
 def es_clave_aes_valida(clave):
@@ -72,19 +72,18 @@ def cifrador(data, key):
     padded_data = padder.update(data) + padder.finalize()
     return encryptor.update(padded_data) + encryptor.finalize()
 
+
+    
 def decifrador(data, key):
     iv = b'\x00' * 16
     aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
     decryptor = aesCipher.decryptor()
-    
+    decrypted_data = decryptor.update(data) + decryptor.finalize()
     try:
-        decrypted_data = decryptor.update(data) + decryptor.finalize()
         unpadder = padding.PKCS7(128).unpadder()
         return unpadder.update(decrypted_data) + unpadder.finalize()
-    except:
-        decrypted_data = decryptor.update(data) + decryptor.finalize()
+    except ValueError:
         return decrypted_data
-
 # --- Configuración del servidor ---
 
 dir_IP_servidor = "127.0.0.1"
@@ -97,63 +96,76 @@ print(f"Servidor iniciado en {dir_IP_servidor}:{puerto_servidor}")
 inputs = [server_socket]
 key_simetrica = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]
 
-# --- Manejo de clientes ---
+
 def manejar_cliente(cliente_socket):
+    file_bytes = b""
+    procesar_imagen = False
+    nombre_archivo = "archivo_recibido.jpg"  # Cambia según la extensión esperada.
+
     while True:
         try:
             data = cliente_socket.recv(1024)
             if not data:
                 break
-            data_descifrada = decifrador(data,key_simetrica)
-            print(f"Datos recibidos: {data_descifrada}")
-            
-            if data_descifrada.startswith(b'<archivo>') and data_descifrada.endswith(b'<fin>'):
-                nombre_archivo = data_descifrada[9:-5].decode()
-            # Identificar la solicitud
-            if data_descifrada == b"El archivo esta cifrado":
-                respuesta = firmar_peticion_clave("dame la clave", clave_privada).encode()
-                cliente_socket.send(cifrador(respuesta, key_simetrica))
-                
-            elif es_clave_aes_valida(data_descifrada):
-                
+
+            data_descifrada = decifrador(data, key_simetrica)
+            print(f"Datos descifrados: {data_descifrada}")
+
+            if data_descifrada.startswith(b"<CONTENIDO>"):
+                procesar_imagen = True
+                print("Inicio de contenido detectado.")
+
+            elif data_descifrada.endswith(b"<FIN>") and procesar_imagen:
+                file_bytes += data_descifrada[:-5]
+                ruta_archivo = f"carpeta_del_cliente/{nombre_archivo}"
+                with open(ruta_archivo, "wb") as archivo:
+                    archivo.write(file_bytes)
+                print(f"Archivo recibido y guardado: {ruta_archivo}")
+                procesar_imagen = False
+                file_bytes = b""  # Reiniciar el buffer
+
                 try:
-                    with open('carpeta_del_cliente/contenido_recibido_' + nombre_archivo, 'rb') as archivo:
-                        contenido_cifrado = archivo.read()
-                        print("aqui esta el problema")
-                        #contenido_descifrado = decifrador(contenido_cifrado, clave_descifrada)
-                    with open('carpeta_del_cliente/contenido_descifrado_'+ nombre_archivo, 'wb') as archivo_descifrado:
-                        
-                        archivo_descifrado.write(contenido_descifrado)
-                        
-                        
-                        
-                except Exception as e:
-                    cliente_socket.send(f"Error al descifrar: {e}".encode())
+                    marcar(ruta_archivo)
+                    print(f"Marca de agua añadida a: {ruta_archivo}")
+                except UnidentifiedImageError:
+                    print("El archivo recibido no es una imagen válida.")
+
+            elif procesar_imagen:
+                file_bytes += data_descifrada
 
             else:
-                cliente_socket.send(b"Comando no reconocido")
+                print("Comando no reconocido.")
 
-        except ConnectionResetError:
+        except Exception as e:
+            print(f"Error procesando cliente: {e}")
             break
 
     cliente_socket.close()
 
 # --- Bucle principal del servidor ---
 while True:
-    ready_to_read, _, _ = select.select(inputs, [], [])
+    try:
+        ready_to_read, _, _ = select.select(inputs, [], [])
 
-    for sock in ready_to_read:
-        if sock is server_socket:
-            cliente_socket, cliente_direccion = server_socket.accept()
-            print(f"Cliente conectado desde {cliente_direccion}")
-            hilo_cliente = threading.Thread(target=manejar_cliente, args=(cliente_socket,))
-            hilo_cliente.start()
-        else:
-            try:
-                data = sock.recv(1024)
-                if data:
-                    print(f"Datos recibidos en socket no principal: {data}")
-            except ConnectionResetError:
-                inputs.remove(sock)
+        for sock in ready_to_read:
+            if sock is server_socket:
+                cliente_socket, cliente_direccion = server_socket.accept()
+                print(f"Cliente conectado desde {cliente_direccion}")
+                hilo_cliente = threading.Thread(target=manejar_cliente, args=(cliente_socket,))
+                hilo_cliente.daemon = True  # Hilos secundarios se cierran al terminar el servidor principal
+                hilo_cliente.start()
+            else:
+                try:
+                    data = sock.recv(1024)
+                    if data:
+                        print(f"Datos recibidos en socket no principal: {data}")
+                except ConnectionResetError:
+                    inputs.remove(sock)
+    
+    except KeyboardInterrupt:
+        print("Servidor detenido manualmente.")
+        break
+    except Exception as e:
+        print(f"Error inesperado en el servidor: {e}")
 
 server_socket.close()

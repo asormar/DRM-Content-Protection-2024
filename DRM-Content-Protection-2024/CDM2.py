@@ -76,9 +76,14 @@ def decifrador(data, key):
     iv = b'\x00' * 16
     aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
     decryptor = aesCipher.decryptor()
-    decrypted_data = decryptor.update(data) + decryptor.finalize()
-    unpadder = padding.PKCS7(128).unpadder()
-    return unpadder.update(decrypted_data) + unpadder.finalize()
+    
+    try:
+        decrypted_data = decryptor.update(data) + decryptor.finalize()
+        unpadder = padding.PKCS7(128).unpadder()
+        return unpadder.update(decrypted_data) + unpadder.finalize()
+    except:
+        decrypted_data = decryptor.update(data) + decryptor.finalize()
+        return decrypted_data
 
 # --- Configuración del servidor ---
 
@@ -102,20 +107,22 @@ def manejar_cliente(cliente_socket):
             data_descifrada = decifrador(data,key_simetrica)
             print(f"Datos recibidos: {data_descifrada}")
             
-
+            if data_descifrada.startswith(b'<archivo>') and data_descifrada.endswith(b'<fin>'):
+                nombre_archivo = data_descifrada[9:-5].decode()
             # Identificar la solicitud
             if data_descifrada == b"El archivo esta cifrado":
                 respuesta = firmar_peticion_clave("dame la clave", clave_privada).encode()
                 cliente_socket.send(cifrador(respuesta, key_simetrica))
-            elif data_descifrada.startswith(b'<archivo>') and data_descifrada.endswith(b'<fin>'):
-                nombre_archivo = data_descifrada[9:-5].decode()
+                
             elif es_clave_aes_valida(data_descifrada):
-                clave_descifrada = decifrador(data_descifrada,key_simetrica)
+                
                 try:
                     with open('carpeta_del_cliente/contenido_recibido_' + nombre_archivo, 'rb') as archivo:
                         contenido_cifrado = archivo.read()
-                        contenido_descifrado = decifrador(contenido_cifrado, clave_descifrada)
+                        print("aqui esta el problema")
+                        #contenido_descifrado = decifrador(contenido_cifrado, clave_descifrada)
                     with open('carpeta_del_cliente/contenido_descifrado_'+ nombre_archivo, 'wb') as archivo_descifrado:
+                        
                         archivo_descifrado.write(contenido_descifrado)
                         
                         

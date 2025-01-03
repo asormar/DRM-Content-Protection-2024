@@ -45,8 +45,8 @@ aesEncryptor = aesCipher.encryptor()
 
 # Cifrar la clave
 KEY_cifrada = aesEncryptor.update(key_DESZIFRAR_CLAVES)
-#print("Clave cifrada:", KEY_cifrada)
-
+print("Clave cifrada:", KEY_cifrada)
+print(len(KEY_cifrada))
 #print("El servidor está escuchando...")
 
 while True:
@@ -70,6 +70,7 @@ while True:
                 # Enviar la clave cifrada al cliente al conectarse
                 if mensaje_descifrado=="dame la clave":
                     socket.sendall(KEY_cifrada)
+                    
                     print("Clave cifrada enviada \n")
                     print("-"*40, "\n")
                     
