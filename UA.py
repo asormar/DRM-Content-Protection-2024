@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from pathlib import Path
 import math
 import base64
+import time
 
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
@@ -46,9 +47,11 @@ def escribir():  # Crea una función para escribir
         
         #print(message[24:])
         
+        
 def escuchar():
     print("Escribe:")
     file_bytes= b""
+    file_bytes_cdm=b""
     archivo_cifrado=""
     procesar_imagen= "apagado"
     global pedir_solicitud_cdm
@@ -72,6 +75,7 @@ def escuchar():
             if identificador_final == b'<FIN>':
                 
                 file_bytes += data[:-5]
+                file_bytes_cdm += data
 
                 if len(file_bytes)%16==0:
                     archivo_cifrado="si"
@@ -82,39 +86,44 @@ def escuchar():
 
                 print(message[24:]+ " recibid@ \n")
                 print(f"El archivo {archivo_cifrado} está cifrado")
-                nombre_archivo = "<archivo>"+message[24:]+"<fin>"
-                nombre_archivo = cifrador(nombre_archivo.encode())
-                s_UA_CDM.send(nombre_archivo)
-                with open('carpeta_del_cliente/contenido_recibido_'+ message[24:], 'wb') as archivo:
-                    archivo.write(file_bytes)
-
+                
                 if archivo_cifrado=="si":
-                    pedir_solicitud_cdm="El archivo esta cifrado"                    
+                    identificador_contenido= "<"+message[24:]+">"
+                    pedir_solicitud_cdm="El archivo esta cifrado "+identificador_contenido
+                    
                     pedir_solicitud_cdm= cifrador(pedir_solicitud_cdm.encode())
+                    print("Mensaje cifrado ",pedir_solicitud_cdm, "\n")
                     
+                    CDM.send(pedir_solicitud_cdm)
+                    firma= CDM.recv(1024)
+                    print("Firma: ",firma,"\n")
                     
-                    
-                    s_UA_CDM.send(pedir_solicitud_cdm)
-                    
-                    firma= s_UA_CDM.recv(1024)
                     
                     s_licencias.send(firma)
                     clave_licencia= s_licencias.recv(1024)
-                    s_UA_CDM.send(clave_licencia)
-                elif archivo_cifrado=="no":
-                    abrir_archivo="El archivo no esta cifrado" 
-                    abrir_archivo = cifrador(abrir_archivo.encode())
-                    s_UA_CDM.send(abrir_archivo)
+                    print("Clave licencia: ",clave_licencia)
+                    CDM.send(clave_licencia)
+                    time.sleep(1) #Pequeño retraso para que no se solapen datos en el CDM
+                    
+                    CDM.send(file_bytes_cdm)
+                    
+                if archivo_cifrado=="no":
+                    with open('carpeta_del_cliente/contenido_recibido_'+message[24:], 'wb') as file:
+                        file.write(file_bytes)
+    
+                
   
                 print("-"*40+"\n Sigue escribiendo: \n")
                 procesar_imagen= "apagado"
               
                 file_bytes= b"" #Es necesario porque si no muestra la misma imagen al pedir otras (no se por que)
-
+                file_bytes_cdm= b""
+                
                 False
             
             else:
                 file_bytes += data
+                file_bytes_cdm += data
                 
 
             
@@ -138,8 +147,8 @@ def escuchar():
 # Crear el socket TCP
 s_contenidos = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s_contenidos.connect(("127.0.0.1", 6001))
-s_UA_CDM = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s_UA_CDM.connect(("127.0.0.1", 8003))
+CDM = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+CDM.connect(("127.0.0.1", 8003))
 s_licencias = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s_licencias.connect(("127.0.0.1", 7002))
 

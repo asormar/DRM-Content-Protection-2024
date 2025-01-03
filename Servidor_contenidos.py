@@ -88,9 +88,8 @@ while True:
                         imagen = archivo.read()
                         #print(contenido_en_lista)
 
-                        #Esto creo que no esta cifrado
+                        
                         socket.send("<CONTENIDO>".encode())
-                        print(imagen)
                         socket.sendall(imagen)
                         socket.send("<FIN>".encode())
                         print(recurso,"enviad@ \n", "-"*40)
