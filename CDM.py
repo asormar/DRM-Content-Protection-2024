@@ -4,6 +4,45 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 import base64
 import math
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
+import subprocess
+
+
+def marcar(imagen):
+    current_machine_id = subprocess.check_output('wmic csproduct get uuid').split(b'\n')[1].strip()
+    # Abrir la imagen base y asegurarse de que esté en modo RGBA
+    Imagen = Image.open(imagen).convert("RGBA")
+
+    # Crear una nueva imagen de marca de agua en RGBA
+    marca_agua = Image.new("RGBA", Imagen.size, (0, 0, 0, 0))
+    dibujar = ImageDraw.Draw(marca_agua)
+
+    # Definir las propiedades de la fuente y el texto
+    tamaño_fuente = int(min(Imagen.size) * 0.05)# Ajustar el tamaño según sea necesario
+    
+    ruta_fuente = "arial.ttf"  # Reemplazar con la ruta a una fuente .ttf en tu sistema
+    fuente = ImageFont.truetype(ruta_fuente, tamaño_fuente)
+    texto_marca_agua = current_machine_id.decode()
+
+    # Calcular la posición del texto
+    bbox = dibujar.textbbox((0, 0), texto_marca_agua, font=fuente)
+    ancho_texto, alto_texto = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+    # Determinar el centro de la imagen
+    x_centro = (Imagen.size[0] - ancho_texto) // 2
+    y_centro = (Imagen.size[1] - alto_texto) // 2
+    print("x",x_centro)
+    print("y",y_centro)
+    color_relleno = (0, 0, 0, 128)  # Negro semitransparente
+    dibujar.text((x_centro, y_centro), texto_marca_agua, font=fuente, fill=color_relleno)
+    # Rotar la marca de agua
+    marca_agua_rotada = marca_agua.rotate(45)
+
+    # Combinar las imágenes usando alpha_composite
+    resultado = Image.alpha_composite(Imagen, marca_agua_rotada)
+
+    # Guardar la imagen final
+    resultado.save(imagen)
 
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
@@ -58,7 +97,7 @@ inputs= [s]
 
 procesar_imagen= "apagado"
 file_bytes=b""
-
+archivo_cifrado = False
 while True:
     ready_to_read, ready_to_write, in_error = select.select(inputs, [], [])
     
@@ -85,14 +124,25 @@ while True:
                     unpadder = padding.PKCS7(128).unpadder()
                     mensaje_despadding = unpadder.update(mensaje_descifrado) + unpadder.finalize()
                     print(mensaje_despadding.decode(), "\n")
-                    
-                    if mensaje_despadding.decode()[24]=="<" and mensaje_despadding.decode()[-1]==">":
-                        identificador_contenido= mensaje_despadding.decode()[25:-1]
-                    
-                    
-                    clave_privada = (1783, 3233)
-                    socket.send(firmar_peticion_clave("dame la clave",clave_privada).encode())
-                    
+                    if mensaje_despadding.decode()[:26]=="El archivo si esta cifrado":
+                        archivo_cifrado = True
+                        
+                    elif mensaje_despadding.decode()[:26]=="El archivo no esta cifrado":
+                        archivo_cifrado = False
+                        
+                    if mensaje_despadding.decode()[27]=="<" and mensaje_despadding.decode()[-1]==">":
+                        
+                        identificador_contenido= mensaje_despadding.decode()[28:-1]
+                        
+                    if archivo_cifrado:
+                        clave_privada = (1783, 3233)
+                        socket.send(firmar_peticion_clave("dame la clave",clave_privada).encode())
+                    else:
+                        try:
+                            marcar('carpeta_del_cliente/contenido_recibido_'+identificador_contenido)
+                        except:
+                            print("paso")
+                            pass
                 elif procesar_imagen=="encendido":
                     
                     file_bytes +=mensaje
@@ -110,7 +160,10 @@ while True:
                             file.write(img_despadding)
                             print("Contenido descifrado guardado \n"+"-"*40)
                             procesar_imagen= "apagado"
-                            
+                        try:
+                            marcar('carpeta_del_cliente/contenido_recibido_'+identificador_contenido)
+                        except:
+                            pass
                              
                             
             except ConnectionAbortedError: # al escuchar todo el rato no para de descifrar y da error

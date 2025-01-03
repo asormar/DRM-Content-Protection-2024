@@ -89,7 +89,7 @@ def escuchar():
                 
                 if archivo_cifrado=="si":
                     identificador_contenido= "<"+message[24:]+">"
-                    pedir_solicitud_cdm="El archivo esta cifrado "+identificador_contenido
+                    pedir_solicitud_cdm="El archivo si esta cifrado "+identificador_contenido
                     
                     pedir_solicitud_cdm= cifrador(pedir_solicitud_cdm.encode())
                     print("Mensaje cifrado ",pedir_solicitud_cdm, "\n")
@@ -110,8 +110,10 @@ def escuchar():
                 if archivo_cifrado=="no":
                     with open('carpeta_del_cliente/contenido_recibido_'+message[24:], 'wb') as file:
                         file.write(file_bytes)
-    
-                
+                    identificador_contenido= "<"+message[24:]+">"
+                    no_cifrado = "El archivo no esta cifrado " + identificador_contenido
+                    no_cifrado = cifrador(no_cifrado.encode())
+                    CDM.send(no_cifrado)
   
                 print("-"*40+"\n Sigue escribiendo: \n")
                 procesar_imagen= "apagado"
