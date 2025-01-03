@@ -13,10 +13,10 @@ clave_privada = (1783, 3233)
 
 def marcar(imagen):
     # Abrir la imagen base y asegurarse de que esté en modo RGBA
-    imagen = Image.open(imagen).convert("RGBA")
+    Imagen = Image.open(imagen).convert("RGBA")
 
     # Crear una nueva imagen de marca de agua en RGBA
-    marca_agua = Image.new("RGBA", imagen.size, (0, 0, 0, 0))
+    marca_agua = Image.new("RGBA", Imagen.size, (0, 0, 0, 0))
     dibujar = ImageDraw.Draw(marca_agua)
 
     # Definir las propiedades de la fuente y el texto
@@ -35,7 +35,7 @@ def marcar(imagen):
     dibujar.text((x, y), texto_marca_agua, font=fuente, fill=color_relleno)
 
     # Crear una imagen de marca de agua rotada
-    marca_agua_rotada = Image.new("RGBA", imagen.size, (0, 0, 0, 0))
+    marca_agua_rotada = Image.new("RGBA", Imagen.size, (0, 0, 0, 0))
     dibujar_rotada = ImageDraw.Draw(marca_agua_rotada)
     dibujar_rotada.text((x, y), texto_marca_agua, font=fuente, fill=color_relleno)
 
@@ -43,10 +43,10 @@ def marcar(imagen):
     marca_agua_rotada = marca_agua_rotada.rotate(45, center=(x, y))
 
     # Combinar las imágenes usando alpha_composite
-    resultado = Image.alpha_composite(imagen, marca_agua_rotada)
+    resultado = Image.alpha_composite(Imagen, marca_agua_rotada)
 
     # Guardar la imagen final
-    resultado.save('carpeta_del_cliente/contenido_recibido_'+message[24:])
+    resultado.save(imagen)
 
 
 def es_clave_aes_valida(clave):
@@ -72,17 +72,21 @@ def cifrador(data, key):
     padded_data = padder.update(data) + padder.finalize()
     return encryptor.update(padded_data) + encryptor.finalize()
 
+def decifrador_archivos(data,key):
+    iv = b'\x00' * 16
+    aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    decryptor = aesCipher.decryptor()
+    decrypted_data = decryptor.update(data) + decryptor.finalize()
+    return decrypted_data
 def decifrador(data, key):
     iv = b'\x00' * 16
     aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
     decryptor = aesCipher.decryptor()
-    
+    decrypted_data = decryptor.update(data) + decryptor.finalize()
     try:
-        decrypted_data = decryptor.update(data) + decryptor.finalize()
         unpadder = padding.PKCS7(128).unpadder()
         return unpadder.update(decrypted_data) + unpadder.finalize()
     except:
-        decrypted_data = decryptor.update(data) + decryptor.finalize()
         return decrypted_data
 
 # --- Configuración del servidor ---
@@ -100,42 +104,43 @@ key_simetrica = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xd
 # --- Manejo de clientes ---
 def manejar_cliente(cliente_socket):
     while True:
-        try:
-            data = cliente_socket.recv(1024)
-            if not data:
-                break
-            data_descifrada = decifrador(data,key_simetrica)
-            print(f"Datos recibidos: {data_descifrada}")
-            
-            if data_descifrada.startswith(b'<archivo>') and data_descifrada.endswith(b'<fin>'):
-                nombre_archivo = data_descifrada[9:-5].decode()
-            # Identificar la solicitud
-            if data_descifrada == b"El archivo esta cifrado":
-                respuesta = firmar_peticion_clave("dame la clave", clave_privada).encode()
-                cliente_socket.send(cifrador(respuesta, key_simetrica))
-                
-            elif es_clave_aes_valida(data_descifrada):
-                
-                try:
-                    with open('carpeta_del_cliente/contenido_recibido_' + nombre_archivo, 'rb') as archivo:
-                        contenido_cifrado = archivo.read()
-                        print("aqui esta el problema")
-                        #contenido_descifrado = decifrador(contenido_cifrado, clave_descifrada)
-                    with open('carpeta_del_cliente/contenido_descifrado_'+ nombre_archivo, 'wb') as archivo_descifrado:
-                        
-                        archivo_descifrado.write(contenido_descifrado)
-                        
-                        
-                        
-                except Exception as e:
-                    cliente_socket.send(f"Error al descifrar: {e}".encode())
-
-            else:
-                cliente_socket.send(b"Comando no reconocido")
-
-        except ConnectionResetError:
+        
+        data = cliente_socket.recv(1024)
+        if not data:
             break
-
+        data_descifrada = decifrador(data,key_simetrica)
+        print(f"Datos recibidos: {data_descifrada}")
+            
+        if data_descifrada.startswith(b'<archivo>') and data_descifrada.endswith(b'<fin>'):
+            nombre_archivo = data_descifrada[9:-5].decode()
+        # Identificar la solicitud
+        elif data_descifrada == b"El archivo esta cifrado":
+            respuesta = firmar_peticion_clave("dame la clave", clave_privada).encode()
+            cliente_socket.send(cifrador(respuesta, key_simetrica))
+        elif data_descifrada == b"El archivo no esta cifrado":
+            with open("carpeta_del_cliente/contenido_recibido_"+nombre_archivo, "rb") as archivo_r:
+                archivo = archivo_r.read()
+                print(archivo)
+            try:
+                marcar('carpeta_del_cliente/contenido_recibido_' + nombre_archivo)
+            except UnidentifiedImageError:
+                pass
+        elif es_clave_aes_valida(data_descifrada):
+            clave_descifrada = data_descifrada
+            with open("carpeta_del_cliente/contenido_recibido_"+nombre_archivo, "rb") as archivo_r:
+                archivo = archivo_r.read()
+                archivo_decodificado = decifrador_archivos(archivo,clave_descifrada)
+                print(archivo)
+                print(archivo_decodificado)
+                #Esta es la parte que esta mal
+                
+                unpadder = padding.PKCS7(128).unpadder()
+                a_unpadding = unpadder.update(archivo_decodificado) + unpadder.finalize()
+                print(a_unpadding)
+        else:
+            cliente_socket.send(b"Comando no reconocido")
+        
+        
     cliente_socket.close()
 
 # --- Bucle principal del servidor ---

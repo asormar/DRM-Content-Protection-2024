@@ -104,7 +104,7 @@ def escuchar():
                 elif archivo_cifrado=="no":
                     abrir_archivo="El archivo no esta cifrado" 
                     abrir_archivo = cifrador(abrir_archivo.encode())
-                
+                    s_UA_CDM.send(abrir_archivo)
   
                 print("-"*40+"\n Sigue escribiendo: \n")
                 procesar_imagen= "apagado"

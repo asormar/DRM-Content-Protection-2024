@@ -45,6 +45,7 @@ aesEncryptor = aesCipher.encryptor()
 
 # Cifrar la clave
 KEY_cifrada = aesEncryptor.update(key_DESZIFRAR_CLAVES)
+print("Clave cifrada:", key_DESZIFRAR_CLAVES)
 print("Clave cifrada:", KEY_cifrada)
 print(len(KEY_cifrada))
 #print("El servidor está escuchando...")
