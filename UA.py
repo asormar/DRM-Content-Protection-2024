@@ -3,11 +3,27 @@ import threading
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
-from pathlib import Path
 import math
 import base64
 import time
-
+import json
+import os
+def leer_json(nombre_archivo_json):
+    """
+    Lee el archivo JSON y devuelve su contenido como un diccionario.
+    :param nombre_archivo_json: Ruta del archivo JSON.
+    :return: Diccionario con las claves y los IV.
+    """
+    try:
+        with open(nombre_archivo_json, 'r') as archivo:
+            return json.load(archivo)
+    except FileNotFoundError:
+        print(f"El archivo {nombre_archivo_json} no existe.")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error al leer el archivo JSON: {nombre_archivo_json}.")
+        return None
+cifrado_o_no = leer_json("esta_cifrado_o_no.json")
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
     key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurar que sea de 256 bits

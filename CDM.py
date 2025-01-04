@@ -8,6 +8,9 @@ from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 import subprocess
 
 
+
+
+
 def marcar(imagen):
     current_machine_id = subprocess.check_output('wmic csproduct get uuid').split(b'\n')[1].strip()
     # Abrir la imagen base y asegurarse de que esté en modo RGBA
@@ -31,8 +34,7 @@ def marcar(imagen):
     # Determinar el centro de la imagen
     x_centro = (Imagen.size[0] - ancho_texto) // 2
     y_centro = (Imagen.size[1] - alto_texto) // 2
-    print("x",x_centro)
-    print("y",y_centro)
+    
     color_relleno = (0, 0, 0, 128)  # Negro semitransparente
     dibujar.text((x_centro, y_centro), texto_marca_agua, font=fuente, fill=color_relleno)
     # Rotar la marca de agua
@@ -136,7 +138,7 @@ while True:
                         
                     if archivo_cifrado:
                         clave_privada = (1783, 3233)
-                        socket.send(firmar_peticion_clave("dame la clave",clave_privada).encode())
+                        socket.send(firmar_peticion_clave("<"+identificador_contenido+">",clave_privada).encode())
                     else:
                         try:
                             marcar('carpeta_del_cliente/contenido_recibido_'+identificador_contenido)
