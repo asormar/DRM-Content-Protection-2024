@@ -26,7 +26,7 @@ def leer_json(nombre_archivo_json):
         print(f"Error al leer el archivo JSON: {nombre_archivo_json}.")
         return None
 
-cifrado_o_no = leer_json("esta_cifrado_o_no.json")
+#cifrado_o_no = leer_json("esta_cifrado_o_no.json")
 
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
