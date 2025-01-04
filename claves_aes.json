@@ -1,30 +1,30 @@
 {
     "burro.png": {
-        "clave": "484c6f18c10b30a8572b82b72591310ba992d1fe6d78def3686dd31c6194c47c",
-        "iv": "00000000000000000000000000000000"
+        "clave": "484c6f18c10b30a8572b82b72591310ba992d1fe6d78def3686dd31c6194c47c"
+    
     },
     "cancelenesamadre.png": {
-        "clave": "2e072f39779e7a717e1e02252cb10ed8ff985e6644ff41852298ce36ffef1937",
-        "iv": "00000000000000000000000000000000"
+        "clave": "2e072f39779e7a717e1e02252cb10ed8ff985e6644ff41852298ce36ffef1937"
+        
     },
     "follow.jpg": {
-        "clave": "f5f7b08faf5848c1c45411aebfd4756c113a09f12a8edfdc6036a6ba77adc1a6",
-        "iv": "00000000000000000000000000000000"
+        "clave": "f5f7b08faf5848c1c45411aebfd4756c113a09f12a8edfdc6036a6ba77adc1a6"
+        
     },
     "Jagger.png": {
-        "clave": "29006cbdbb4af315c2cbd6dacd40d2555553b747366432b7135676609923f3bc",
-        "iv": "00000000000000000000000000000000"
+        "clave": "29006cbdbb4af315c2cbd6dacd40d2555553b747366432b7135676609923f3bc"
+        
     },
     "img1.png": {
-        "clave": "ec1378a27ac78e403e1baa0d84031c05569580da0a4eed1f626bf17a0a05744e",
-        "iv": "00000000000000000000000000000000"
+        "clave": "ec1378a27ac78e403e1baa0d84031c05569580da0a4eed1f626bf17a0a05744e"
+        
     },
     "img2.png": {
-        "clave": "ec1378a27ac78e403e1baa0d84031c05569580da0a4eed1f626bf17a0a05744e",
-        "iv": "00000000000000000000000000000000"
+        "clave": "ec1378a27ac78e403e1baa0d84031c05569580da0a4eed1f626bf17a0a05744e"
+        
     },
     "video.mp4": {
-        "clave": "ec1378a27ac78e403e1baa0d84031c05569580da0a4eed1f626bf17a0a05744e",
-        "iv": "00000000000000000000000000000000"
+        "clave": "ec1378a27ac78e403e1baa0d84031c05569580da0a4eed1f626bf17a0a05744e"
+        
     }
 }
