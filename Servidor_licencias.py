@@ -94,7 +94,7 @@ while True:
                     KEY_cifrada = info["clave"]
                     KEY_cifrada = cifrador_(KEY_cifrada)
                     socket.sendall(KEY_cifrada)
-                    print("Clave cifrada enviada:",KEY_cifrada," \n")
+                    print("Clave cifrada enviada:",KEY_cifrada)
                     print("-"*40, "\n")
                     
                 else:
@@ -102,6 +102,11 @@ while True:
                     socket.send("Firma no valida".encode())
                     
             except ValueError: # al escuchar todo el rato no para de descifrar y da error
-                print("Firma no procesable")
+                print("Firma no procesable"+"\n"+"-"*40)
                 socket.send("Firma no procesable".encode()) # Da error al recibir el mensaje porque no está firmado con RSA
                 pass
+            except KeyError:
+                print("Este archivo no tiene clave registrada"+"\n"+"-"*40)
+                socket.send("Este archivo no tiene clave registrada".encode())
+                
+            

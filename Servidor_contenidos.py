@@ -97,3 +97,4 @@ while True:
                         
                 except (FileNotFoundError, PermissionError): # Si solo pones img1 da error de permiso
                     socket.send(cifrador("Error: mensaje no reconocido".encode()))
+                    print("-"*40)

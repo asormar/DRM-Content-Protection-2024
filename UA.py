@@ -127,11 +127,14 @@ def escuchar():
 
                     s_licencias.send(firma)
                     clave_licencia = s_licencias.recv(1024)
-                    print("Clave licencia: ", clave_licencia)
                     CDM.send(clave_licencia)
-                    time.sleep(1) #Pequeño retraso para que no se solapen datos en el CDM
+                    if len(clave_licencia)==38:
+                        print(clave_licencia.decode())
+                    else:
+                        print("Clave licencia: ", clave_licencia)
+                        time.sleep(1) #Pequeño retraso para que no se solapen datos en el CDM
 
-                    CDM.send(file_bytes_cdm)
+                        CDM.send(file_bytes_cdm)
 
                 if archivo_cifrado == "no":
                     with open('carpeta_del_cliente/contenido_recibido_' + message[24:], 'wb') as file:

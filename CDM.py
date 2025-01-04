@@ -8,9 +8,6 @@ from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 import subprocess
 
 
-
-
-
 def marcar(imagen):
     current_machine_id = subprocess.check_output('wmic csproduct get uuid').split(b'\n')[1].strip()
     # Abrir la imagen base y asegurarse de que esté en modo RGBA
@@ -171,12 +168,16 @@ while True:
             except ConnectionAbortedError: # al escuchar todo el rato no para de descifrar y da error
                 pass
             except ValueError: # Da este error al intentar descifar la clave porque esta no tiene padding
-                key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
-                clave_licencia_descifrada = decifrador(mensaje, key_DESZIFRAR_CLAVES)
-                print("Clave de licencia descifrada: ", clave_licencia_descifrada, "\n")
-                #clave_licencia_descifrada = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'  # Asegúrate de que sea de 256 bits
-                #print(clave_licencia_descifrada==b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN')
-                procesar_imagen= "encendido"
+                if len(mensaje)==38:
+                    print(mensaje.decode()+"\n"+"-"*40)
+                    
+                else:
+                    key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
+                    clave_licencia_descifrada = decifrador(mensaje, key_DESZIFRAR_CLAVES)
+                    print("Clave de licencia descifrada: ", clave_licencia_descifrada, "\n")
+                    #clave_licencia_descifrada = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'  # Asegúrate de que sea de 256 bits
+                    #print(clave_licencia_descifrada==b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN')
+                    procesar_imagen= "encendido"
                 
             
 
