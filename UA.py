@@ -104,7 +104,7 @@ def escuchar():
 
                 # Calcular la entropía del archivo
                 entropia = calcular_entropia(file_bytes)
-                print(f"Entropía del archivo recibido: {entropia:.4f}")
+                print(f"\nEntropía del archivo recibido: {entropia:.4f}")
 
                 if len(file_bytes) % 16 == 0 and entropia>7.5:
                     archivo_cifrado = "si"
@@ -128,7 +128,7 @@ def escuchar():
                     s_licencias.send(firma)
                     clave_licencia = s_licencias.recv(1024)
                     CDM.send(clave_licencia)
-                    if len(clave_licencia)==38:
+                    if len(clave_licencia)==38: #no tiene clave registrada o falso positivo
                         print(clave_licencia.decode())
                     else:
                         print("Clave licencia: ", clave_licencia)

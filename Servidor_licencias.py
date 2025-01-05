@@ -23,6 +23,7 @@ def leer_json(nombre_archivo_json):
         return None
 
 archivo_claves = leer_json("claves_aes.json")
+#print(archivo_claves)
 
 def descifrar_peticion_clave(mensaje_cifrado, clave_publica):
     d, n = clave_publica

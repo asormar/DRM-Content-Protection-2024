@@ -54,7 +54,7 @@ while True:
                 
                 # Leer el contenido del archivo y enviarlo al cliente
                 try:
-
+                    contenido_en_lista = os.listdir("carpeta_contenidos")
                     contenido=""
                     
                     for imagenes in contenido_en_lista:

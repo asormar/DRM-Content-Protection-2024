@@ -18,7 +18,7 @@ def marcar(imagen):
     dibujar = ImageDraw.Draw(marca_agua)
 
     # Definir las propiedades de la fuente y el texto
-    tamaño_fuente = int(min(Imagen.size) * 0.05)# Ajustar el tamaño según sea necesario
+    tamaño_fuente = int(min(Imagen.size) * 0.05)  # Ajustar el tamaño según sea necesario
     
     ruta_fuente = "arial.ttf"  # Reemplazar con la ruta a una fuente .ttf en tu sistema
     fuente = ImageFont.truetype(ruta_fuente, tamaño_fuente)
@@ -34,14 +34,19 @@ def marcar(imagen):
     
     color_relleno = (0, 0, 0, 128)  # Negro semitransparente
     dibujar.text((x_centro, y_centro), texto_marca_agua, font=fuente, fill=color_relleno)
+    
     # Rotar la marca de agua
     marca_agua_rotada = marca_agua.rotate(45)
 
     # Combinar las imágenes usando alpha_composite
     resultado = Image.alpha_composite(Imagen, marca_agua_rotada)
 
+    # Convertir la imagen resultante a RGB (elimina el canal alfa) Y QUE NO DE ERROR CON JPG
+    resultado = resultado.convert("RGB")
+
     # Guardar la imagen final
-    resultado.save(imagen)
+    resultado.save(imagen, format="JPEG")
+
 
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
@@ -127,6 +132,7 @@ while True:
                         archivo_cifrado = True
                         
                     elif mensaje_despadding.decode()[:26]=="El archivo no esta cifrado":
+                        print("-"*40)
                         archivo_cifrado = False
                         
                     if mensaje_despadding.decode()[27]=="<" and mensaje_despadding.decode()[-1]==">":
@@ -140,7 +146,7 @@ while True:
                         try:
                             marcar('carpeta_del_cliente/contenido_recibido_'+identificador_contenido)
                         except:
-                            print("paso")
+                            #No se puede firmar porque os es un video o un txt
                             pass
                 elif procesar_imagen=="encendido":
                     
