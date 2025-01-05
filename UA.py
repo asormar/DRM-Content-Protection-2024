@@ -78,11 +78,24 @@ def escribir():  # Crea una función para escribir
             break
         s_contenidos.send(message.encode())  # Enviar mensaje al servidor
 
+# FIRMAS TIPICAS DE CONTENIDOS
+firmas_archivos = [
+    b'\x89PNG\r\n\x1a\n', #png
+    b'\xff\xd8\xff\xe0', #jpeg y jpg
+    b'\xff\xd8\xff\xe1', #jpeg y jpg
+    b'ftypisom', #mp4
+    b'ftypmp42', #mp4
+    b'\x1a\x45\xdf\xa3', #mkv
+    b'EBML' #mkv
+]
+    
+    
+
 def escuchar():
     print(" Escribe el nombre del archivo o busca los disponibles (catalogo):")
     file_bytes = b""
     file_bytes_cdm = b""
-    archivo_cifrado = ""
+    archivo_cifrado = "si"
     procesar_imagen = "apagado"
     global pedir_solicitud_cdm
 
@@ -92,6 +105,13 @@ def escuchar():
 
         identificador_principio = data[:11]
         identificador_final = data[-5:]
+        
+        #DETECTAR SI ESTÁ CIFRADO
+        for firma in firmas_archivos:
+            if firma in data[:16]:
+                archivo_cifrado = "no"
+                break
+
 
         if identificador_principio == b"<CONTENIDO>":
             procesar_imagen = "encendido"
@@ -102,14 +122,6 @@ def escuchar():
                 file_bytes += data[:-5]
                 file_bytes_cdm += data
 
-                # Calcular la entropía del archivo
-                entropia = calcular_entropia(file_bytes)
-                print(f"\nEntropía del archivo recibido: {entropia:.4f}")
-
-                if len(file_bytes) % 16 == 0 and entropia>7.5:
-                    archivo_cifrado = "si"
-                else:
-                    archivo_cifrado = "no"
 
                 print(message[24:] + " recibid@ \n")
                 print(f"El archivo {archivo_cifrado} está cifrado")
@@ -149,6 +161,7 @@ def escuchar():
 
                 file_bytes = b"" #Es necesario porque si no muestra la misma imagen al pedir otras (no se por que)
                 file_bytes_cdm = b""
+                archivo_cifrado = "si"
 
                 False
 

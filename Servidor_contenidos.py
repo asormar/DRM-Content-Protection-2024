@@ -75,6 +75,7 @@ while True:
             
             else:
                 try:
+                    contenido_en_lista = os.listdir("carpeta_contenidos")
                     archivo=""
                     recurso=""
                     for i in contenido_en_lista:
