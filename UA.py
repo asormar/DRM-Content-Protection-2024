@@ -8,14 +8,8 @@ import base64
 import time
 import json
 import os
-from collections import Counter  # Import Counter for frequency calculation
 
 def leer_json(nombre_archivo_json):
-    """
-    Lee el archivo JSON y devuelve su contenido como un diccionario.
-    :param nombre_archivo_json: Ruta del archivo JSON.
-    :return: Diccionario con las claves y los IV.
-    """
     try:
         with open(nombre_archivo_json, 'r') as archivo:
             return json.load(archivo)
@@ -54,20 +48,6 @@ def decifrador(cosa_que_queremos_descifrar, key):
     #no hace falta padding porque tiene longitud 32
     return KEY_descifrada_licencia
 
-def calcular_entropia(datos):
-    """
-    Calcula la entropía de los datos proporcionados.
-    :param datos: Bytes del archivo o mensaje a analizar.
-    :return: Entropía calculada.
-    """
-    # Contar la frecuencia de cada byte en los datos
-    frec = Counter(datos)
-    total_bytes = len(datos)
-
-    # Calcular la entropía
-    entropia = -sum((freq / total_bytes) * math.log2(freq / total_bytes) for freq in frec.values())
-    return entropia
-
 def escribir():  # Crea una función para escribir
     while True:
         global message
@@ -90,7 +70,6 @@ firmas_archivos = [
 ]
     
     
-
 def escuchar():
     print(" Escribe el nombre del archivo o busca los disponibles (catalogo):")
     file_bytes = b""

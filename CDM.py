@@ -22,7 +22,7 @@ def marcar(imagen):
     
     ruta_fuente = "arial.ttf"  # Reemplazar con la ruta a una fuente .ttf en tu sistema
     fuente = ImageFont.truetype(ruta_fuente, tamaño_fuente)
-    texto_marca_agua = current_machine_id.decode()
+    texto_marca_agua = current_machine_id.decode() # COGEMOS LA ID DEL ORDENADOR
 
     # Calcular la posición del texto
     bbox = dibujar.textbbox((0, 0), texto_marca_agua, font=fuente)
