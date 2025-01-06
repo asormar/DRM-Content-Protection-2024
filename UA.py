@@ -3,24 +3,7 @@ import threading
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
-import math
-import base64
 import time
-import json
-import os
-
-def leer_json(nombre_archivo_json):
-    try:
-        with open(nombre_archivo_json, 'r') as archivo:
-            return json.load(archivo)
-    except FileNotFoundError:
-        print(f"El archivo {nombre_archivo_json} no existe.")
-        return None
-    except json.JSONDecodeError:
-        print(f"Error al leer el archivo JSON: {nombre_archivo_json}.")
-        return None
-
-#cifrado_o_no = leer_json("esta_cifrado_o_no.json")
 
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
@@ -110,7 +93,7 @@ def escuchar():
                     pedir_solicitud_cdm = "El archivo si esta cifrado " + identificador_contenido
 
                     pedir_solicitud_cdm = cifrador(pedir_solicitud_cdm.encode())
-                    print("Mensaje cifrado ", pedir_solicitud_cdm, "\n")
+                    print("\nMensaje cifrado ", pedir_solicitud_cdm, "\n")
 
                     CDM.send(pedir_solicitud_cdm)
                     firma = CDM.recv(1024)

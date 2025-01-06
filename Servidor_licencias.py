@@ -7,11 +7,6 @@ import json
 import os
 
 def leer_json(nombre_archivo_json):
-    """
-    Lee el archivo JSON y devuelve su contenido como un diccionario.
-    :param nombre_archivo_json: Ruta del archivo JSON.
-    :return: Diccionario con las claves y los IV.
-    """
     try:
         with open(nombre_archivo_json, 'r') as archivo:
             return json.load(archivo)
@@ -56,20 +51,6 @@ def cifrador_(clave_a_enviar):
     KEY_cifrada = aesEncryptor.update(key_e)
     return KEY_cifrada
     
-    
-# Clave y configuración de cifrado
-"""
-KEY_enviar = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'  # Asegúrate de que sea de 256 bits
-key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
-iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
-aesCipher = Cipher(algorithms.AES(key_DESZIFRAR_CLAVES), modes.CBC(iv))
-aesEncryptor = aesCipher.encryptor()
-
-# Cifrar la clave
-KEY_cifrada = aesEncryptor.update(KEY_enviar)"""
-#print("Clave cifrada:", KEY_cifrada)
-
-#print("El servidor está escuchando...")
 
 while True:
     ready_to_read, ready_to_write, in_error = select.select(inputs, [], [])

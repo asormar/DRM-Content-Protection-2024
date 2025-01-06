@@ -3,13 +3,12 @@ import select
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 import base64
-import math
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 import subprocess
 
-
 def marcar(imagen):
-    current_machine_id = subprocess.check_output('wmic csproduct get uuid').split(b'\n')[1].strip()
+    current_machine_id = subprocess.check_output('wmic csproduct get uuid').split(b'\n')[1].strip() # COGEMOS LA ID DEL ORDENADOR
+
     # Abrir la imagen base y asegurarse de que esté en modo RGBA
     Imagen = Image.open(imagen).convert("RGBA")
 
@@ -22,8 +21,7 @@ def marcar(imagen):
     
     ruta_fuente = "arial.ttf"  # Reemplazar con la ruta a una fuente .ttf en tu sistema
     fuente = ImageFont.truetype(ruta_fuente, tamaño_fuente)
-    texto_marca_agua = current_machine_id.decode() # COGEMOS LA ID DEL ORDENADOR
-
+    texto_marca_agua = current_machine_id.decode()
     # Calcular la posición del texto
     bbox = dibujar.textbbox((0, 0), texto_marca_agua, font=fuente)
     ancho_texto, alto_texto = bbox[2] - bbox[0], bbox[3] - bbox[1]
