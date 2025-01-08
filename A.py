@@ -14,13 +14,13 @@ def generar_clave_aes():
     """
     clave = os.urandom(algorithms.AES.block_size // 8 * 2)  # 256 bits (32 bytes)
     return {"clave": clave.hex()}
-clave = generar_clave_aes()
+clave = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
 
 def cifrador(cosa_que_queremos_cifrar,clave): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
     
     
-    key = bytes.fromhex(clave["clave"])
+    key = clave
     iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
     aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
     aesEncryptor = aesCipher.encryptor()
@@ -36,13 +36,7 @@ def cifrador(cosa_que_queremos_cifrar,clave): # Si es una imagen no hay que toca
 
 m = "claves_aes.json"
 
-with open( m, "rb") as file:
+with open(m, "rb") as file:
     archivo_a_cifrar = file.read()
-    with open("carpeta_contenidos/c_"+ m, "wb") as archivo:
+    with open("c_"+ m, "wb") as archivo:
         archivo.write(cifrador(archivo_a_cifrar,clave))
-with open("claves_aes.json", "r") as a_json:
-    datos = json.load(a_json)
-datos["c_"+m] = clave
-with open("claves_aes.json", 'w') as archivo_json:
-    json.dump(datos, archivo_json, indent=4)
-

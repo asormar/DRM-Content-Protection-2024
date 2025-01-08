@@ -13,6 +13,17 @@ def int_to_bytes(i):
 def bytes_to_int(b):
  return int.from_bytes(b, byteorder='big')
 
+def decifrador(cosa_que_queremos_descifrar, key):
+    iv = b'\x00' * 16  # Debe coincidir con el IV del servidor en este ejemplo simplificado
+
+    aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    aesDecryptor = aesCipher.decryptor()
+
+    # Descifrar el contenido
+    KEY_descifrada_licencia = aesDecryptor.update(cosa_que_queremos_descifrar) + aesDecryptor.finalize()
+    #no hace falta padding porque tiene longitud 32
+    return KEY_descifrada_licencia
+
 def leer_json(nombre_archivo_json):
     try:
         with open(nombre_archivo_json, 'r') as archivo:
@@ -24,7 +35,17 @@ def leer_json(nombre_archivo_json):
         print(f"Error al leer el archivo JSON: {nombre_archivo_json}.")
         return None
 
+clave_json = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'                    
+with open('c_claves_aes.json', 'rb') as file:
+    json_cifrado= file.read()
+json_descifrado= decifrador(json_cifrado, clave_json)
+
+with open('claves_aes.json', 'wb') as file:
+    file.write(json_descifrado)
+    
+
 archivo_claves = leer_json("claves_aes.json")
+#os.remove("claves_aes.json")
 #print(archivo_claves)
 
 def descifrar_peticion_clave(mensaje_cifrado, clave_publica):
@@ -106,6 +127,7 @@ while True:
 
                 # Enviar la clave cifrada al cliente al conectarse
                 if mensaje_descifrado.startswith("<") and mensaje_descifrado.endswith(">"):
+                    
                     archivo_id = mensaje_descifrado[1:-1]
                     info = archivo_claves[archivo_id]
                     KEY = info["clave"]
