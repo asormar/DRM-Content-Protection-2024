@@ -1,10 +1,18 @@
 from socket import *
 import select
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives import padding, serialization
 import base64
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 import subprocess
+from cryptography.hazmat.primitives.asymmetric import rsa
+import os
+
+def int_to_bytes(i):
+ return i.to_bytes((i.bit_length()+7)//8, byteorder='big')
+
+def bytes_to_int(b):
+ return int.from_bytes(b, byteorder='big')
 
 def marcar(imagen):
     current_machine_id = subprocess.check_output('wmic csproduct get uuid').split(b'\n')[1].strip() # COGEMOS LA ID DEL ORDENADOR
@@ -48,7 +56,6 @@ def marcar(imagen):
 
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
-    key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurar que sea de 256 bits
     iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
     aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
     aesEncryptor = aesCipher.encryptor()
@@ -79,6 +86,13 @@ def firmar_peticion_clave(mensaje, clave_privada):
     mensaje_cifrado_codificado = base64.b64encode(",".join(map(str, mensaje_cifrado)).encode()).decode()
     return mensaje_cifrado_codificado
 
+def descifrar_peticion_clave(mensaje_cifrado, clave_publica):
+    d, n = clave_publica
+    # Decodificar la cadena base64 y convertirla nuevamente en una lista de enteros
+    mensaje_cifrado = list(map(int, base64.b64decode(mensaje_cifrado).decode().split(",")))
+    mensaje_descifrado = ''.join(chr(pow(char, d, n)) for char in mensaje_cifrado)
+    return mensaje_descifrado
+
 # Almacenar dirección IP
 dir_IP_servidor= "127.0.0.1"
 puerto_servidor = 8003
@@ -100,6 +114,7 @@ inputs= [s]
 procesar_imagen= "apagado"
 file_bytes=b""
 archivo_cifrado = False
+recibir_clave=True
 while True:
     ready_to_read, ready_to_write, in_error = select.select(inputs, [], [])
     
@@ -114,11 +129,45 @@ while True:
         else:
             try:
                 mensaje = socket.recv(2048)
+                #print(mensaje)
+                
+                if recibir_clave==True:
+                    clave_publica= mensaje
+                    peer_public_key = serialization.load_pem_public_key(clave_publica)
+                    #print(peer_public_key)
+                    
+                    numbers = peer_public_key.public_numbers()
+                    n= numbers.n
+                    e = numbers.e
+                    #print(n,e)
+                    clave_publica= (e,n)
+                    #print(mensaje)
+                    
+                    key_CDM= os.urandom(16)
+                    print(key_CDM)
+                    
+                    key_int = bytes_to_int(key_CDM)
+        
+                    key_cifrada_para_UA= pow(key_int,e,n)
+                    key_cifrada_para_UA= int_to_bytes(key_cifrada_para_UA)
+                    socket.send(key_cifrada_para_UA)
+                    
+                    
+                    key_cifrada_de_licencias= socket.recv(1024)
+                    key_licencias= decifrador(key_cifrada_de_licencias,key_CDM)
+                    print(key_licencias)
+                    #key_licencias= pow(key_int_licencias,d,n)
+
+                    
+                    mensaje = socket.recv(2048)
+                                        
+                    recibir_clave=False
                 
                 if mensaje==b"":
                     continue
                 
                 if procesar_imagen== "apagado":
+                    
                     key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurarse de que sea de 256 bits
                     mensaje_descifrado = decifrador(mensaje, key)  
 
@@ -176,8 +225,8 @@ while True:
                     print(mensaje.decode()+"\n"+"-"*40)
                     
                 else:
-                    key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
-                    clave_licencia_descifrada = decifrador(mensaje, key_DESZIFRAR_CLAVES)
+                    #key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
+                    clave_licencia_descifrada = decifrador(mensaje, key_licencias)
                     print("Clave de licencia descifrada: ", clave_licencia_descifrada, "\n")
                     #clave_licencia_descifrada = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'  # Asegúrate de que sea de 256 bits
                     #print(clave_licencia_descifrada==b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN')

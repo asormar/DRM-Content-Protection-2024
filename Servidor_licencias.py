@@ -1,10 +1,17 @@
 from socket import *
 import select
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding, serialization
 import math
 import base64
 import json
 import os
+
+def int_to_bytes(i):
+ return i.to_bytes((i.bit_length()+7)//8, byteorder='big')
+
+def bytes_to_int(b):
+ return int.from_bytes(b, byteorder='big')
 
 def leer_json(nombre_archivo_json):
     try:
@@ -44,13 +51,15 @@ inputs = [s]
 
 def cifrador_(clave_a_enviar):
     iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
-    key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
+    #key_DESZIFRAR_CLAVES = b'\x0c4*A)\xb6\xc8\xf1\x12\xdf\xb3q\x1b\xb7)\xcc\xceBrPL\xf9&\x90)m\x80s$\x01\x0e\x8e'
     key_e = bytes.fromhex(clave_a_enviar)
-    aesCipher = Cipher(algorithms.AES(key_DESZIFRAR_CLAVES), modes.CBC(iv))
+    aesCipher = Cipher(algorithms.AES(key_licencias), modes.CBC(iv))
     aesEncryptor = aesCipher.encryptor()
     KEY_cifrada = aesEncryptor.update(key_e)
     return KEY_cifrada
     
+    
+recibir_clave=True
 
 while True:
     ready_to_read, ready_to_write, in_error = select.select(inputs, [], [])
@@ -63,6 +72,32 @@ while True:
         else:
             try:
                 mensaje = socket.recv(1024)
+                
+                if recibir_clave==True:
+                    clave_publica= mensaje
+                    peer_public_key = serialization.load_pem_public_key(clave_publica)
+                    #print(peer_public_key)
+                    
+                    numbers = peer_public_key.public_numbers()
+                    n= numbers.n
+                    e = numbers.e
+                    #print(n,e)
+                    clave_publica= (e,n)
+                    
+                    key_licencias= os.urandom(16)
+                    print(key_licencias)
+                    
+                    key_int = bytes_to_int(key_licencias)
+                    
+                    key_cifrada_para_UA= pow(key_int,e,n)
+                    key_cifrada_para_UA= int_to_bytes(key_cifrada_para_UA)
+                    socket.send(key_cifrada_para_UA)
+                    
+                    mensaje = socket.recv(2048)
+                    print(mensaje)
+                    #print(mensaje)
+                    recibir_clave=False
+                
                 print("Mensaje cifrado: ",mensaje)
                 
                 clave_publica= (7, 3233)
@@ -73,8 +108,8 @@ while True:
                 if mensaje_descifrado.startswith("<") and mensaje_descifrado.endswith(">"):
                     archivo_id = mensaje_descifrado[1:-1]
                     info = archivo_claves[archivo_id]
-                    KEY_cifrada = info["clave"]
-                    KEY_cifrada = cifrador_(KEY_cifrada)
+                    KEY = info["clave"]
+                    KEY_cifrada = cifrador_(KEY)
                     socket.sendall(KEY_cifrada)
                     print("Clave cifrada enviada:",KEY_cifrada)
                     print("-"*40, "\n")
