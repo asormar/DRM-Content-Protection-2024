@@ -106,7 +106,7 @@ while True:
                     clave_publica= (e,n)
                     
                     key_licencias= os.urandom(16)
-                    print(key_licencias)
+                    #print(key_licencias)
                     
                     key_int = bytes_to_int(key_licencias)
                     
@@ -115,15 +115,15 @@ while True:
                     socket.send(key_cifrada_para_UA)
                     
                     mensaje = socket.recv(2048)
-                    print(mensaje)
+                    #print(mensaje)
                     #print(mensaje)
                     recibir_clave=False
                 
-                print("Mensaje cifrado: ",mensaje)
+                print("Mensaje cifrado: ",mensaje,"\n")
                 
                 clave_publica= (7, 3233)
                 mensaje_descifrado = descifrar_peticion_clave(mensaje, clave_publica)
-                print(mensaje_descifrado, "\n")
+                #print(mensaje_descifrado, "\n")
 
                 # Enviar la clave cifrada al cliente al conectarse
                 if mensaje_descifrado.startswith("<") and mensaje_descifrado.endswith(">"):

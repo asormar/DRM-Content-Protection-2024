@@ -164,13 +164,13 @@ def escuchar():
                     key_int_CDM = bytes_to_int(key_cifrada_del_CDM)
                     key_CDM= pow(key_int_CDM,d,n)
                     key_CDM= int_to_bytes(key_CDM)
-                    print(key_CDM)
+                    #print(key_CDM)
                     
                     key_cifrada_del_licencias= s_licencias.recv(1024)
                     key_int_licencias = bytes_to_int(key_cifrada_del_licencias)
                     key_licencias= pow(key_int_licencias,d,n)
                     key_licencias= int_to_bytes(key_licencias)
-                    print(key_licencias)
+                    #print(key_licencias)
                     
                     #key_licencias= int_to_bytes(key_licencias)
                     CDM.send(cifrador_sin_padding(key_licencias, key_CDM))

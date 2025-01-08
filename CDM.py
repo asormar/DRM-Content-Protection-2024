@@ -144,7 +144,7 @@ while True:
                     #print(mensaje)
                     
                     key_CDM= os.urandom(16)
-                    print(key_CDM)
+                    #print(key_CDM)
                     
                     key_int = bytes_to_int(key_CDM)
         
@@ -155,7 +155,7 @@ while True:
                     
                     key_cifrada_de_licencias= socket.recv(1024)
                     key_licencias= decifrador(key_cifrada_de_licencias,key_CDM)
-                    print(key_licencias)
+                    #print(key_licencias)
                     #key_licencias= pow(key_int_licencias,d,n)
 
                     
