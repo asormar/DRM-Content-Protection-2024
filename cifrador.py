@@ -34,9 +34,9 @@ def cifrador(cosa_que_queremos_cifrar,clave): # Si es una imagen no hay que toca
         
     return mensaje_cifrado
 
-m = "claves_aes.json"
+m = input("Nombre del archivo: ")
 
-with open( m, "rb") as file:
+with open("carpeta_contenidos/" + m, "rb") as file:
     archivo_a_cifrar = file.read()
     with open("carpeta_contenidos/c_"+ m, "wb") as archivo:
         archivo.write(cifrador(archivo_a_cifrar,clave))
