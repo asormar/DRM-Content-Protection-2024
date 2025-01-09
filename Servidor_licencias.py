@@ -131,7 +131,7 @@ while True:
                     archivo_id = mensaje_descifrado[1:-1]
                     info = archivo_claves[archivo_id]
                     KEY = info["clave"]
-                    KEY_cifrada = cifrador_(KEY)
+                    KEY_cifrada = cifrador_(KEY) #Usa la clave de licencias antes definida
                     socket.sendall(KEY_cifrada)
                     print("Clave cifrada enviada:",KEY_cifrada)
                     print("-"*40, "\n")

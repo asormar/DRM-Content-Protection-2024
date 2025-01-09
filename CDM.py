@@ -168,7 +168,7 @@ while True:
                 
                 if procesar_imagen== "apagado":
                     
-                    key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurarse de que sea de 256 bits
+                    key= key_CDM
                     mensaje_descifrado = decifrador(mensaje, key)  
 
                     # Eliminar el padding PKCS7

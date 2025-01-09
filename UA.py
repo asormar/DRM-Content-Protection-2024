@@ -51,16 +51,6 @@ def decifrador(cosa_que_queremos_descifrar, key):
     #no hace falta padding porque tiene longitud 32
     return KEY_descifrada_licencia
 
-def escribir():  # Crea una función para escribir
-    while True:
-        global message
-        message = input() ###Preguntar por que al poner algo en el input se duplica el print
-        message = "<" + str(s_contenidos.getsockname()) + ">: " + message
-        if message[24:] == "quit":
-            s_contenidos.close()
-            break
-        s_contenidos.send(message.encode())  # Enviar mensaje al servidor
-
 def firmar_peticion_clave(mensaje, clave_privada):
     e, n = clave_privada
     mensaje_cifrado = [pow(ord(char), e, n) for char in mensaje]
@@ -82,6 +72,19 @@ def generar_claves():
         backend=default_backend()
     )
     return private_key
+
+
+def escribir():  # Crea una función para escribir
+    while True:
+        global message
+        message = input() ###Preguntar por que al poner algo en el input se duplica el print
+        message = "<" + str(s_contenidos.getsockname()) + ">: " + message
+        if message[24:] == "quit":
+            CDM.close()
+            s_contenidos.close()
+            s_licencias.close()
+            break
+        s_contenidos.send(message.encode())  # Enviar mensaje al servidor
 
 # FIRMAS TIPICAS DE CONTENIDOS
 firmas_archivos = [
@@ -186,7 +189,7 @@ def escuchar():
                     identificador_contenido = "<" + message[24:] + ">"
                     pedir_solicitud_cdm = "El archivo si esta cifrado " + identificador_contenido
 
-                    pedir_solicitud_cdm = cifrador(pedir_solicitud_cdm.encode(),key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32])
+                    pedir_solicitud_cdm = cifrador(pedir_solicitud_cdm.encode(),key_CDM)
                     print("\nMensaje cifrado ", pedir_solicitud_cdm, "\n")
 
                     CDM.send(pedir_solicitud_cdm)
@@ -199,7 +202,7 @@ def escuchar():
                     if len(clave_licencia)==38: #no tiene clave registrada o falso positivo
                         print(clave_licencia.decode())
                     else:
-                        print("Clave licencia: ", clave_licencia)
+                        print("Clave licencia cifrada: ", clave_licencia)
                         time.sleep(1) #Pequeño retraso para que no se solapen datos en el CDM
 
                         CDM.send(file_bytes_cdm)
@@ -209,7 +212,7 @@ def escuchar():
                         file.write(file_bytes)
                     identificador_contenido = "<" + message[24:] + ">"
                     no_cifrado = "El archivo no esta cifrado " + identificador_contenido
-                    no_cifrado = cifrador(no_cifrado.encode(),key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32])
+                    no_cifrado = cifrador(no_cifrado.encode(),key_CDM)
                     CDM.send(no_cifrado)
 
                 print("-" * 40 + "\n Sigue escribiendo: \n")
@@ -226,10 +229,10 @@ def escuchar():
                 file_bytes_cdm += data
 
         elif procesar_imagen == "apagado":
-            key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurarse de que sea de 256 bits
+            key_s_contenidos = b'\xa9\x87\x1e\xdc\xc2\x3f\xb5\xb1\x9d\x4a\xee\x13\xc6\x92\x7a\xe5\x8b\x39\x14\xf2\xdf\x3e\x0d\x65\xb8\xc3\x7f\xa1\x45\x1d\x9c\x02'[:32]  # Asegurarse de que sea de 256 bits
 
             # Descifrar el contenido
-            mensaje_descifrado = decifrador(data, key)  
+            mensaje_descifrado = decifrador(data, key_s_contenidos)  
 
             # Eliminar el padding PKCS7
             unpadder = padding.PKCS7(128).unpadder()

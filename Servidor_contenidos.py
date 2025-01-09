@@ -7,7 +7,7 @@ import os
 
 def cifrador(cosa_que_queremos_cifrar): # Si es una imagen no hay que tocarlo, si es un mensaje hay que hacerle .encode() antes de entrar a la función
     # Preparar la clave y el cifrador AES en modo CBC (más seguro que ECB)
-    key = b'\xec\x13x\xa2z\xc7\x8e@>\x1b\xaa\r\x84\x03\x1c\x05V\x95\x80\xda\nN\xed\x1fbk\xf1z\n\x05tN'[:32]  # Asegurar que sea de 256 bits
+    key= b'\xa9\x87\x1e\xdc\xc2\x3f\xb5\xb1\x9d\x4a\xee\x13\xc6\x92\x7a\xe5\x8b\x39\x14\xf2\xdf\x3e\x0d\x65\xb8\xc3\x7f\xa1\x45\x1d\x9c\x02'[:32]
     iv = b'\x00' * 16  # Para producción, usa un IV aleatorio
     aesCipher = Cipher(algorithms.AES(key), modes.CBC(iv))
     aesEncryptor = aesCipher.encryptor()
